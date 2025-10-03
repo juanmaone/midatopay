@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
+// import { useAegis } from '@cavos/aegis'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,6 +48,11 @@ export default function LoginPage() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al iniciar sesión')
     }
+  }
+
+  // Login social (placeholder para futuras expansiones)
+  const handleSocialLogin = async (provider: 'apple' | 'google') => {
+    toast.info(`Login con ${provider} próximamente disponible con Cavos Aegis`)
   }
 
   return (
@@ -103,6 +109,35 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Botones de login social */}
+            <div className="space-y-3 mb-6">
+              <Button
+                type="button"
+                onClick={() => handleSocialLogin('apple')}
+                className="w-full bg-black hover:bg-gray-800 text-white"
+              >
+                🍎 Continuar con Apple
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleSocialLogin('google')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                📱 Continuar con Google
+              </Button>
+              
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t" style={{ borderColor: 'rgba(26,26,26,0.1)' }} />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span style={{ backgroundColor: 'rgba(254, 108, 28, 0.15)', color: '#5d5d5d' }} className="px-2">
+                    o continúa con email
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {/* Email */}
               <div className="space-y-2">

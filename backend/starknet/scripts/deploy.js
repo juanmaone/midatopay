@@ -5,14 +5,17 @@ const fs = require('fs');
 
 // Configuración para Starknet Sepolia
 const SEPOLIA_CONFIG = {
-  rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_7',
+  rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_9',
   chainId: 'SN_SEPOLIA',
   explorerUrl: 'https://sepolia.starkscan.co'
 };
 
 class StarknetDeployer {
   constructor() {
-    this.provider = new RpcProvider({ nodeUrl: SEPOLIA_CONFIG.rpcUrl });
+    this.provider = new RpcProvider({ 
+      nodeUrl: SEPOLIA_CONFIG.rpcUrl,
+      blockIdentifier: 'latest'
+    });
     this.deployedContracts = {};
   }
 
@@ -74,10 +77,11 @@ class StarknetDeployer {
     const { sierra, casm } = this.readCompiledContract(contractName);
 
     try {
-      const declareResponse = await this.account.declare({
-        contract: sierra,
-        casm
-      });
+      // Usar declare con fee fijo para evitar problemas de estimation
+      const declareResponse = await this.account.declare(
+        { contract: sierra, casm },
+        { maxFee: '1000000000000000000', skipValidate: true }
+      );
 
       await this.provider.waitForTransaction(declareResponse.transaction_hash);
       
@@ -159,8 +163,12 @@ class StarknetDeployer {
       for (const tokenAddress of allowedTokens) {
         console.log(`📝 Agregando token: ${tokenAddress.substring(0, 10)}...`);
         
-        const addTokenCall = contract.populate('add_allowed_token', [tokenAddress]);
-        const result = await this.account.execute([addTokenCall]);
+        const invocation = {
+          contractAddress: contract.address,
+          entrypoint: 'add_allowed_token',
+          calldata: CallData.compile([tokenAddress])
+        };
+        const result = await this.account.execute([invocation]);
         
         await this.provider.waitForTransaction(result.transaction_hash);
         console.log(`✅ Token agregado: ${result.transaction_hash}`);
@@ -206,14 +214,14 @@ STARKNET_USDT_ADDRESS=0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645
 STARKNET_STRK_ADDRESS=0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d
 
 # Network Configuration
-STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_7
+STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_9
 STARKNET_CHAIN_ID=SN_SEPOLIA
 
 # Frontend Environment Variables (add NEXT_PUBLIC_ prefix)
 NEXT_PUBLIC_STARKNET_GATEWAY_ADDRESS=${this.deployedContracts.paymentGateway || 'contract_address_after_deployment'}
 NEXT_PUBLIC_STARKNET_USDT_ADDRESS=0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8
 NEXT_PUBLIC_STARKNET_STRK_ADDRESS=0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d
-NEXT_PUBLIC_STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_7
+NEXT_PUBLIC_STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_9
 `;
 
     fs.writeFileSync(path.join(__dirname, '..', '..', '.env.starknet.example'), envExample);
