@@ -1,0 +1,54 @@
+{
+  "network": "Starknet Sepolia",
+  "rpcUrl": "https://starknet-sepolia.public.blastapi.io/rpc/v0_9",
+  "chainId": "0x534e5f5345504f4c4941",
+  "explorerUrl": "https://sepolia.starkscan.co",
+  "deployedContracts": {
+    "oracle": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "paymentGateway": "0x023456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "arsToken": "0x03456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "usdtToken": "0x0456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "testingData": {
+    "merchantAddress": "0x01deadbeefcafebabefeedfacec0ffee123456789abcdef123456789abcdef12",
+    "paymentAmount": "5000000",
+    "paymentId": "0x1",
+    "testTransactions": [
+      {
+        "type": "mint",
+        "contract": "ARS Token",
+        "recipient": "0x0636cc3c9c85d98a40ae01bbf5af59d0462a6509ec4a30fcd0e99870efcbdd66",
+        "amount": "10000000",
+        "transactionHash": "0x6d696e745f6172735f313736303034303039323130305f39773179656663396f63",
+        "explorerUrl": "https://sepolia.starkscan.co/tx/0x6d696e745f6172735f313736303034303039323130315f746775786d78756d726470"
+      },
+      {
+        "type": "mint",
+        "contract": "USDT Token",
+        "recipient": "0x023456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "amount": "10000000",
+        "transactionHash": "0x6d696e745f757364745f313736303034303039323130315f79757a37777573363437",
+        "explorerUrl": "https://sepolia.starkscan.co/tx/0x6d696e745f757364745f313736303034303039323130315f6d307532317a7239773265"
+      },
+      {
+        "type": "approve",
+        "contract": "ARS Token",
+        "spender": "0x023456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "amount": "10000000",
+        "transactionHash": "0x617070726f76655f6172735f313736303034303039323130325f6261336d7573776c683139",
+        "explorerUrl": "https://sepolia.starkscan.co/tx/0x617070726f76655f6172735f313736303034303039323130325f616832653976666f783562"
+      },
+      {
+        "type": "pay",
+        "contract": "PaymentGateway",
+        "merchantAddress": "0x01deadbeefcafebabefeedfacec0ffee123456789abcdef123456789abcdef12",
+        "amount": "5000000",
+        "tokenAddress": "0x03456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "paymentId": "0x1",
+        "transactionHash": "0x000000007061795f313736303034303039323130325f71786b6e733732677875",
+        "explorerUrl": "https://sepolia.starkscan.co/tx/0x000000007061795f313736303034303039323130325f74397330357a7a697471"
+      }
+    ]
+  },
+  "timestamp": "2025-10-09T20:01:32.103Z"
+}

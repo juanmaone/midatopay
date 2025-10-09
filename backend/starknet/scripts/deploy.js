@@ -1,12 +1,12 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../config.env') });
-const { Account, RpcProvider, Contract, json, stark, CallData } = require('starknet');
+const { Account, RpcProvider, Contract, CallData } = require('starknet');
 const fs = require('fs');
 
 // Configuración para Starknet Sepolia
 const SEPOLIA_CONFIG = {
-  rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_6',
-  chainId: 'SN_SEPOLIA',
+  rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_9',
+  chainId: '0x534e5f5345504f4c4941', // SN_SEPOLIA en hexadecimal
   explorerUrl: 'https://sepolia.starkscan.co'
 };
 
@@ -14,9 +14,17 @@ class StarknetDeployer {
   constructor() {
     this.provider = new RpcProvider({ 
       nodeUrl: SEPOLIA_CONFIG.rpcUrl,
+      chainId: SEPOLIA_CONFIG.chainId,
       blockIdentifier: 'latest'
     });
-    this.deployedContracts = {};
+    
+    this.account = null;
+    this.deployedContracts = {
+      oracle: null,
+      paymentGateway: null,
+      arsToken: null,        // PausableERC20 para ARS
+      usdtToken: null        // PausableERC20 para USDT
+    };
   }
 
   // Configurar cuenta desde variables de entorno
@@ -28,10 +36,8 @@ class StarknetDeployer {
       throw new Error('STARKNET_PRIVATE_KEY y STARKNET_ACCOUNT_ADDRESS son requeridos');
     }
 
-    // Intentar con STRK como fee token
     this.account = new Account(this.provider, accountAddress, privateKey);
     console.log(`✅ Cuenta configurada: ${accountAddress}`);
-    console.log(`💰 Intentando usar STRK para gas fees...`);
   }
 
   // Detectar ruta de Scarb automáticamente
@@ -47,7 +53,7 @@ class StarknetDeployer {
     const platform = os.platform();
 
     if (platform === 'win32') {
-      // Windows: usar ruta por defecto o buscar en PATH
+      // Windows: usar ruta por defecto
       const defaultPath = 'C:\\Users\\monst\\Downloads\\scarb-v2.12.2-x86_64-pc-windows-msvc\\scarb-v2.12.2-x86_64-pc-windows-msvc\\bin\\scarb.exe';
       console.log(`🔧 Windows detectado, usando: ${defaultPath}`);
       return defaultPath;
@@ -66,39 +72,55 @@ class StarknetDeployer {
     }
   }
 
-  // Compilar contrato (requiere scarb)
-  async compileContract(contractName) {
-    console.log(`🔨 Compilando contrato: ${contractName}`);
+  // Compilar Oracle desde midatopay/oracle
+  async compileOracle() {
+    console.log(`🔨 Compilando StaticFxOracle desde midatopay/oracle`);
     
     const { exec } = require('child_process');
-    
-    // Detectar ruta de Scarb automáticamente
     const scarbPath = this.getScarbPath();
     
     return new Promise((resolve, reject) => {
-      exec(`"${scarbPath}" build`, { cwd: path.join(__dirname, '..') }, (error, stdout, stderr) => {
+      exec(`"${scarbPath}" build`, { cwd: path.join(__dirname, '../../../starknet-token/midatopay/oracle') }, (error, stdout, stderr) => {
         if (error) {
-          console.error('Error compilando:', stderr);
+          console.error('Error compilando Oracle:', stderr);
           reject(error);
         } else {
-          console.log('✅ Compilación exitosa');
+          console.log('✅ Compilación Oracle exitosa');
           resolve(stdout);
         }
       });
     });
   }
 
-  // Compilar PausableERC20 desde su directorio específico
-  async compilePausableERC20() {
-    console.log(`🔨 Compilando PausableERC20 desde starknet-token`);
+  // Compilar PaymentGateway desde midatopay/starknet-paymentoracle
+  async compilePaymentGateway() {
+    console.log(`🔨 Compilando PaymentGateway desde midatopay/starknet-paymentoracle`);
     
     const { exec } = require('child_process');
-    
-    // Detectar ruta de Scarb automáticamente
     const scarbPath = this.getScarbPath();
     
     return new Promise((resolve, reject) => {
-      exec(`"${scarbPath}" build`, { cwd: path.join(__dirname, '../../../starknet-token') }, (error, stdout, stderr) => {
+      exec(`"${scarbPath}" build`, { cwd: path.join(__dirname, '../../../starknet-token/midatopay/starknet-paymentoracle') }, (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error compilando PaymentGateway:', stderr);
+          reject(error);
+        } else {
+          console.log('✅ Compilación PaymentGateway exitosa');
+          resolve(stdout);
+        }
+      });
+    });
+  }
+
+  // Compilar PausableERC20 desde midatopay/starknet-token
+  async compilePausableERC20() {
+    console.log(`🔨 Compilando PausableERC20 desde midatopay/starknet-token`);
+    
+    const { exec } = require('child_process');
+    const scarbPath = this.getScarbPath();
+    
+    return new Promise((resolve, reject) => {
+      exec(`"${scarbPath}" build`, { cwd: path.join(__dirname, '../../../starknet-token/midatopay/starknet-token') }, (error, stdout, stderr) => {
         if (error) {
           console.error('Error compilando PausableERC20:', stderr);
           reject(error);
@@ -110,27 +132,45 @@ class StarknetDeployer {
     });
   }
 
-  // Leer archivos compilados (Sierra + CASM)
-  readCompiledContract(contractName) {
-    const targetDir = path.join(__dirname, '..', 'target', 'dev');
+  // Leer artefactos compilados para Oracle
+  readCompiledOracle() {
+    const targetDir = path.join(__dirname, '../../../starknet-token/midatopay/oracle/target/dev');
     
-    const sierraPath = path.join(targetDir, `midatopay_starknet_${contractName}.contract_class.json`);
-    const casmPath = path.join(targetDir, `midatopay_starknet_${contractName}.compiled_contract_class.json`);
+    const sierraPath = path.join(targetDir, `oracle_starknet_StaticFxOracle.contract_class.json`);
+    const casmPath = path.join(targetDir, `oracle_starknet_StaticFxOracle.compiled_contract_class.json`);
 
     if (!fs.existsSync(sierraPath) || !fs.existsSync(casmPath)) {
-      throw new Error(`Archivos compilados no encontrados para ${contractName}`);
+      throw new Error(`Archivos compilados no encontrados para StaticFxOracle`);
     }
 
-    const sierra = json.parse(fs.readFileSync(sierraPath, 'utf8'));
-    const casm = json.parse(fs.readFileSync(casmPath, 'utf8'));
+    const sierra = JSON.parse(fs.readFileSync(sierraPath, 'utf8'));
+    const casm = JSON.parse(fs.readFileSync(casmPath, 'utf8'));
 
-    console.log(`📁 Leyendo artefactos: Sierra + CASM para ${contractName}`);
+    console.log(`📁 Leyendo artefactos: Sierra + CASM para StaticFxOracle`);
     return { sierra, casm };
   }
 
-  // Leer archivos compilados de PausableERC20 (Sierra + CASM)
+  // Leer artefactos compilados para PaymentGateway
+  readCompiledPaymentGateway() {
+    const targetDir = path.join(__dirname, '../../../starknet-token/midatopay/starknet-paymentoracle/target/dev');
+    
+    const sierraPath = path.join(targetDir, `midatopay_starknet_PaymentGateway.contract_class.json`);
+    const casmPath = path.join(targetDir, `midatopay_starknet_PaymentGateway.compiled_contract_class.json`);
+
+    if (!fs.existsSync(sierraPath) || !fs.existsSync(casmPath)) {
+      throw new Error(`Archivos compilados no encontrados para PaymentGateway`);
+    }
+
+    const sierra = JSON.parse(fs.readFileSync(sierraPath, 'utf8'));
+    const casm = JSON.parse(fs.readFileSync(casmPath, 'utf8'));
+
+    console.log(`📁 Leyendo artefactos: Sierra + CASM para PaymentGateway`);
+    return { sierra, casm };
+  }
+
+  // Leer artefactos compilados para PausableERC20
   readCompiledPausableERC20() {
-    const targetDir = path.join(__dirname, '../../../starknet-token/target/dev');
+    const targetDir = path.join(__dirname, '../../../starknet-token/midatopay/starknet-token/target/dev');
     
     const sierraPath = path.join(targetDir, `pausable_erc20_PausableERC20.contract_class.json`);
     const casmPath = path.join(targetDir, `pausable_erc20_PausableERC20.compiled_contract_class.json`);
@@ -139,37 +179,65 @@ class StarknetDeployer {
       throw new Error(`Archivos compilados no encontrados para PausableERC20`);
     }
 
-    const sierra = json.parse(fs.readFileSync(sierraPath, 'utf8'));
-    const casm = json.parse(fs.readFileSync(casmPath, 'utf8'));
+    const sierra = JSON.parse(fs.readFileSync(sierraPath, 'utf8'));
+    const casm = JSON.parse(fs.readFileSync(casmPath, 'utf8'));
 
     console.log(`📁 Leyendo artefactos: Sierra + CASM para PausableERC20`);
     return { sierra, casm };
   }
 
-  // Declarar contrato
-  async declareContract(contractName) {
-    console.log(`📋 Declarando contrato: ${contractName}`);
+  // Declarar Oracle
+  async declareOracle() {
+    console.log(`📋 Declarando StaticFxOracle`);
 
-    const { sierra, casm } = this.readCompiledContract(contractName);
+    const { sierra, casm } = this.readCompiledOracle();
 
     try {
-      // Usar declare con maxFee explícito para evitar problemas de estimación
       const declareResponse = await this.account.declare({
         contract: sierra,
         casm: casm
       }, {
         maxFee: '1000000000000000000', // 1 ETH en wei
-        skipValidate: true
+        skipValidate: true,
+        version: '0x0' // Usar versión básica
       });
 
       await this.provider.waitForTransaction(declareResponse.transaction_hash);
       
-      console.log(`✅ Contrato declarado: ${declareResponse.class_hash}`);
+      console.log(`✅ StaticFxOracle declarado: ${declareResponse.class_hash}`);
       console.log(`🔗 TX: ${SEPOLIA_CONFIG.explorerUrl}/tx/${declareResponse.transaction_hash}`);
 
       return declareResponse.class_hash;
     } catch (error) {
-      console.error('❌ Error declarando contrato:', error);
+      console.error('❌ Error declarando StaticFxOracle:', error);
+      throw error;
+    }
+  }
+
+  // Declarar PaymentGateway
+  async declarePaymentGateway() {
+    console.log(`📋 Declarando PaymentGateway`);
+
+    const { sierra, casm } = this.readCompiledPaymentGateway();
+
+    try {
+      const declareResponse = await this.account.declare({
+        contract: sierra,
+        casm: casm
+      }, {
+        maxFee: '1000000000000000000', // 1 ETH en wei
+        skipValidate: true,
+        version: '0x0' // Usar versión básica
+      });
+
+      await this.provider.waitForTransaction(declareResponse.transaction_hash);
+      
+      console.log(`✅ PaymentGateway declarado: ${declareResponse.class_hash}`);
+      console.log(`🔗 TX: ${SEPOLIA_CONFIG.explorerUrl}/tx/${declareResponse.transaction_hash}`);
+
+      return declareResponse.class_hash;
+    } catch (error) {
+      console.error('❌ Error declarando PaymentGateway:', error);
       throw error;
     }
   }
@@ -181,13 +249,13 @@ class StarknetDeployer {
     const { sierra, casm } = this.readCompiledPausableERC20();
 
     try {
-      // Usar declare con maxFee explícito para evitar problemas de estimación
       const declareResponse = await this.account.declare({
         contract: sierra,
         casm: casm
       }, {
         maxFee: '1000000000000000000', // 1 ETH en wei
-        skipValidate: true
+        skipValidate: true,
+        version: '0x0' // Usar versión básica
       });
 
       await this.provider.waitForTransaction(declareResponse.transaction_hash);
@@ -202,12 +270,51 @@ class StarknetDeployer {
     }
   }
 
+  // Desplegar Oracle
+  async deployOracle(classHash) {
+    console.log('🚀 Desplegando StaticFxOracle...');
+
+    const adminAddress = this.account.address;
+    const initialRatePpm = '1000000'; // 1:1 ARS/USDT para testing
+    const constructorCalldata = CallData.compile([adminAddress, initialRatePpm]);
+
+    try {
+      const deployResponse = await this.account.deployContract({
+        classHash,
+        constructorCalldata
+      });
+
+      await this.provider.waitForTransaction(deployResponse.transaction_hash);
+
+      const contractAddress = deployResponse.contract_address;
+      
+      console.log(`✅ StaticFxOracle desplegado: ${contractAddress}`);
+      console.log(`🔗 TX: ${SEPOLIA_CONFIG.explorerUrl}/tx/${deployResponse.transaction_hash}`);
+      console.log(`🔗 Contrato: ${SEPOLIA_CONFIG.explorerUrl}/contract/${contractAddress}`);
+
+      this.deployedContracts.oracle = contractAddress;
+      return contractAddress;
+    } catch (error) {
+      console.error('❌ Error desplegando StaticFxOracle:', error);
+      throw error;
+    }
+  }
+
   // Desplegar PaymentGateway
   async deployPaymentGateway(classHash) {
     console.log('🚀 Desplegando PaymentGateway...');
 
-    const ownerAddress = this.account.address;
-    const constructorCalldata = CallData.compile([ownerAddress]);
+    const adminAddress = this.account.address;
+    const oracleAddress = this.deployedContracts.oracle;
+    const arsTokenAddress = this.deployedContracts.arsToken;
+    const usdtTokenAddress = this.deployedContracts.usdtToken;
+    
+    const constructorCalldata = CallData.compile([
+      adminAddress,
+      oracleAddress,
+      arsTokenAddress,
+      usdtTokenAddress
+    ]);
 
     try {
       const deployResponse = await this.account.deployContract({
@@ -252,7 +359,6 @@ class StarknetDeployer {
       console.log(`🔗 TX: ${SEPOLIA_CONFIG.explorerUrl}/tx/${deployResponse.transaction_hash}`);
       console.log(`🔗 Contrato: ${SEPOLIA_CONFIG.explorerUrl}/contract/${contractAddress}`);
 
-      this.deployedContracts.pausableERC20 = contractAddress;
       return contractAddress;
     } catch (error) {
       console.error('❌ Error desplegando PausableERC20:', error);
@@ -260,32 +366,55 @@ class StarknetDeployer {
     }
   }
 
-  // Verificar despliegue
-  async verifyDeployment(contractAddress) {
-    console.log('🔍 Verificando despliegue...');
+  // Verificar despliegue de Oracle
+  async verifyOracleDeployment(contractAddress) {
+    console.log('🔍 Verificando despliegue StaticFxOracle...');
 
     try {
-      const { sierra } = this.readCompiledContract('PaymentGateway');
+      const { sierra } = this.readCompiledOracle();
       const contract = new Contract(sierra.abi, contractAddress, this.provider);
       contract.connect(this.account);
 
-      // Verificar que el admin sea correcto
       const admin = await contract.get_admin();
       
       if (BigInt(admin) === BigInt(this.account.address)) {
-        console.log('✅ Verificación exitosa - Admin correcto');
+        console.log('✅ Verificación Oracle exitosa - Admin correcto');
         return contract;
       } else {
-        console.error('❌ Verificación fallida - Admin incorrecto');
+        console.error('❌ Verificación Oracle fallida - Admin incorrecto');
         return false;
       }
     } catch (error) {
-      console.error('❌ Error verificando despliegue:', error);
+      console.error('❌ Error verificando despliegue Oracle:', error);
       return false;
     }
   }
 
-  // Verificar despliegue PausableERC20
+  // Verificar despliegue de PaymentGateway
+  async verifyPaymentGatewayDeployment(contractAddress) {
+    console.log('🔍 Verificando despliegue PaymentGateway...');
+
+    try {
+      const { sierra } = this.readCompiledPaymentGateway();
+      const contract = new Contract(sierra.abi, contractAddress, this.provider);
+      contract.connect(this.account);
+
+      const admin = await contract.get_admin();
+      
+      if (BigInt(admin) === BigInt(this.account.address)) {
+        console.log('✅ Verificación PaymentGateway exitosa - Admin correcto');
+        return contract;
+      } else {
+        console.error('❌ Verificación PaymentGateway fallida - Admin incorrecto');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error verificando despliegue PaymentGateway:', error);
+      return false;
+    }
+  }
+
+  // Verificar despliegue de PausableERC20
   async verifyPausableERC20Deployment(contractAddress) {
     console.log('🔍 Verificando despliegue PausableERC20...');
 
@@ -294,7 +423,6 @@ class StarknetDeployer {
       const contract = new Contract(sierra.abi, contractAddress, this.provider);
       contract.connect(this.account);
 
-      // Verificar que el admin sea correcto (PausableERC20 usa admin como parámetro del constructor)
       const admin = await contract.get_admin();
       
       if (BigInt(admin) === BigInt(this.account.address)) {
@@ -310,147 +438,67 @@ class StarknetDeployer {
     }
   }
 
-  // Configurar tokens permitidos
-  async setupAllowedTokens(contract) {
-    console.log('🪙 Configurando tokens permitidos...');
-
-    // Usar el PausableERC20 desplegado como token permitido
-    const allowedTokens = [
-      this.deployedContracts.pausableERC20 || '0x0000000000000000000000000000000000000000000000000000000000000000' // PausableERC20
-    ];
-
-    try {
-      for (const tokenAddress of allowedTokens) {
-        console.log(`📝 Agregando token: ${tokenAddress.substring(0, 10)}...`);
-        
-        const invocation = {
-          contractAddress: contract.address,
-          entrypoint: 'add_allowed_token',
-          calldata: CallData.compile([tokenAddress])
-        };
-        const result = await this.account.execute([invocation]);
-        
-        await this.provider.waitForTransaction(result.transaction_hash);
-        console.log(`✅ Token agregado: ${result.transaction_hash}`);
-      }
-
-      console.log('🎉 Todos los tokens configurados exitosamente');
-      return true;
-    } catch (error) {
-      console.error('❌ Error configurando tokens:', error);
-      return false;
-    }
-  }
-
-
-  // Guardar configuración de despliegue
-  saveDeploymentConfig() {
-    const config = {
-      network: 'sepolia',
-      timestamp: new Date().toISOString(),
-      deployer: this.account.address,
-      contracts: this.deployedContracts,
-      rpcUrl: SEPOLIA_CONFIG.rpcUrl,
-      explorerUrl: SEPOLIA_CONFIG.explorerUrl
-    };
-
-    const configPath = path.join(__dirname, '..', 'deployment.json');
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-    
-    console.log(`💾 Configuración guardada en: ${configPath}`);
-    return config;
-  }
-
-  // Generar .env.example
-  generateEnvExample() {
-    const envExample = `# Starknet Configuration for Sepolia Testnet
-
-# Account Configuration (Deploy & Backend)
-STARKNET_PRIVATE_KEY=your_private_key_here
-STARKNET_ACCOUNT_ADDRESS=your_account_address_here
-
-# Contract Addresses
-STARKNET_PAYMENT_GATEWAY_ADDRESS=${this.deployedContracts.paymentGateway || 'contract_address_after_deployment'}
-STARKNET_PAUSABLE_ERC20_ADDRESS=${this.deployedContracts.pausableERC20 || 'token_address_after_deployment'}
-STARKNET_USDT_ADDRESS=0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8
-STARKNET_STRK_ADDRESS=0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d
-
-# Network Configuration
-STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_9
-STARKNET_CHAIN_ID=SN_SEPOLIA
-
-# Frontend Environment Variables (add NEXT_PUBLIC_ prefix)
-NEXT_PUBLIC_STARKNET_GATEWAY_ADDRESS=${this.deployedContracts.paymentGateway || 'contract_address_after_deployment'}
-NEXT_PUBLIC_STARKNET_PAUSABLE_ERC20_ADDRESS=${this.deployedContracts.pausableERC20 || 'token_address_after_deployment'}
-NEXT_PUBLIC_STARKNET_USDT_ADDRESS=0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8
-NEXT_PUBLIC_STARKNET_STRK_ADDRESS=0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d
-NEXT_PUBLIC_STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_6
-
-# Scarb Configuration (optional - auto-detected if not set)
-# SCARB_PATH=C:\\path\\to\\scarb.exe  # Windows
-# SCARB_PATH=/usr/local/bin/scarb     # macOS/Linux
-`;
-
-    fs.writeFileSync(path.join(__dirname, '..', '..', '.env.starknet.example'), envExample);
-    console.log('📝 Archivo .env.starknet.example generado');
-  }
-
-  // Proceso completo de despliegue
+  // Desplegar todo según el flujo del programador
   async deployAll() {
     try {
-      console.log('🚀 Iniciando despliegue completo en Starknet Sepolia...\n');
+      console.log('🚀 Iniciando despliegue completo según flujo del programador...\n');
 
       // 1. Configurar cuenta
       this.setupAccount();
 
-      // 2. Compilar contratos
-      await this.compileContract('PaymentGateway');
+      // 2. Compilar todos los contratos
+      await this.compileOracle();
+      await this.compilePaymentGateway();
       await this.compilePausableERC20();
 
-      // 3. Declarar contratos
-      const gatewayClassHash = await this.declareContract('PaymentGateway');
+      // 3. Declarar todos los contratos
+      const oracleClassHash = await this.declareOracle();
+      const gatewayClassHash = await this.declarePaymentGateway();
       const tokenClassHash = await this.declarePausableERC20();
 
-      // 4. Desplegar contratos
-      const gatewayAddress = await this.deployPaymentGateway(gatewayClassHash);
-      const tokenAddress = await this.deployPausableERC20(tokenClassHash);
+      // 4. Desplegar Oracle primero
+      const oracleAddress = await this.deployOracle(oracleClassHash);
+      const oracleContract = await this.verifyOracleDeployment(oracleAddress);
 
-      // 5. Verificar despliegues y obtener contratos
-      const gatewayContract = await this.verifyDeployment(gatewayAddress);
-      const tokenContract = await this.verifyPausableERC20Deployment(tokenAddress);
+      // 5. Desplegar ARS Token (PausableERC20)
+      const arsTokenAddress = await this.deployPausableERC20(tokenClassHash);
+      const arsTokenContract = await this.verifyPausableERC20Deployment(arsTokenAddress);
+      this.deployedContracts.arsToken = arsTokenAddress;
+
+      // 6. Desplegar USDT Token (PausableERC20)
+      const usdtTokenAddress = await this.deployPausableERC20(tokenClassHash);
+      const usdtTokenContract = await this.verifyPausableERC20Deployment(usdtTokenAddress);
+      this.deployedContracts.usdtToken = usdtTokenAddress;
+
+      // 7. Desplegar PaymentGateway con todas las direcciones
+      const gatewayAddress = await this.deployPaymentGateway(gatewayClassHash);
+      const gatewayContract = await this.verifyPaymentGatewayDeployment(gatewayAddress);
       
-      if (!gatewayContract || !tokenContract) {
+      if (!oracleContract || !arsTokenContract || !usdtTokenContract || !gatewayContract) {
         throw new Error('Verificación de despliegue falló');
       }
 
-      // 6. Configurar tokens permitidos
-      const tokensConfigured = await this.setupAllowedTokens(gatewayContract);
-      
-      if (!tokensConfigured) {
-        console.warn('⚠️ Algunos tokens no se pudieron configurar');
-      }
-
-      // 7. Guardar configuración
+      // 8. Guardar configuración
       const config = this.saveDeploymentConfig();
 
-      // 8. Generar .env.example
+      // 9. Generar .env.example
       this.generateEnvExample();
 
       console.log('\n🎉 ¡Despliegue completado exitosamente!');
       console.log('\n📋 Resumen:');
+      console.log(`   StaticFxOracle: ${oracleAddress}`);
       console.log(`   PaymentGateway: ${gatewayAddress}`);
-      console.log(`   PausableERC20: ${tokenAddress}`);
-      console.log(`   Explorer Gateway: ${SEPOLIA_CONFIG.explorerUrl}/contract/${gatewayAddress}`);
-      console.log(`   Explorer Token: ${SEPOLIA_CONFIG.explorerUrl}/contract/${tokenAddress}`);
+      console.log(`   ARS Token: ${arsTokenAddress}`);
+      console.log(`   USDT Token: ${usdtTokenAddress}`);
       console.log(`   Network: Starknet Sepolia`);
-      console.log('\n📝 Próximos pasos:');
+      console.log('\n📝 Próximos pasos para testing:');
       console.log('   1. Copiar las variables de entorno desde .env.starknet.example');
       console.log('   2. Obtener tokens de prueba del faucet de Sepolia');
-      console.log('   3. Configurar el backend con las nuevas direcciones');
-      console.log('   4. Ejecutar manualmente las funciones según README:');
-      console.log('      - mint(recipient, amount) en PausableERC20');
-      console.log('      - approve(spender, amount) en PausableERC20');
-      console.log('      - pay(merchant_address, amount, token_address, payment_id) en PaymentGateway');
+      console.log('   3. Ejecutar el flujo de testing completo:');
+      console.log('      a) Mint ARS tokens para el owner (vendedor)');
+      console.log('      b) Mint USDT tokens para el PaymentGateway (tesorería)');
+      console.log('      c) Approve ARS tokens al PaymentGateway');
+      console.log('      d) Ejecutar pay() con parámetros de testing');
 
       return config;
     } catch (error) {
@@ -458,35 +506,63 @@ NEXT_PUBLIC_STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_
       throw error;
     }
   }
+
+  // Guardar configuración de despliegue
+  saveDeploymentConfig() {
+    const config = {
+      network: 'Starknet Sepolia',
+      rpcUrl: SEPOLIA_CONFIG.rpcUrl,
+      chainId: SEPOLIA_CONFIG.chainId,
+      explorerUrl: SEPOLIA_CONFIG.explorerUrl,
+      deployedContracts: this.deployedContracts,
+      timestamp: new Date().toISOString()
+    };
+
+    const configPath = path.join(__dirname, '../../deployment-config.json');
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    console.log(`📁 Configuración guardada: ${configPath}`);
+
+    return config;
+  }
+
+  // Generar archivo .env.example
+  generateEnvExample() {
+    const envExample = `# Starknet Configuration
+# Private Key (sin 0x prefix)
+STARKNET_PRIVATE_KEY=06daedc71dfddfe4bf48be5f540960965e46b37ffa6ef90e0f0a69581b5da083
+
+# Wallet Address
+STARKNET_ACCOUNT_ADDRESS=0x0636cc3c9c85d98a40ae01bbf5af59d0462a6509ec4a30fcd0e99870efcbdd66
+
+# Contract Addresses (Nueva estructura del programador)
+STARKNET_ORACLE_ADDRESS=${this.deployedContracts.oracle || 'oracle_address_after_deployment'}
+STARKNET_PAYMENT_GATEWAY_ADDRESS=${this.deployedContracts.paymentGateway || 'gateway_address_after_deployment'}
+STARKNET_ARS_TOKEN_ADDRESS=${this.deployedContracts.arsToken || 'ars_token_address_after_deployment'}
+STARKNET_USDT_TOKEN_ADDRESS=${this.deployedContracts.usdtToken || 'usdt_token_address_after_deployment'}
+
+# Network Configuration
+STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_9
+STARKNET_CHAIN_ID=SN_SEPOLIA
+
+# Frontend Environment Variables (add NEXT_PUBLIC_ prefix)
+NEXT_PUBLIC_STARKNET_ORACLE_ADDRESS=${this.deployedContracts.oracle || 'oracle_address_after_deployment'}
+NEXT_PUBLIC_STARKNET_GATEWAY_ADDRESS=${this.deployedContracts.paymentGateway || 'gateway_address_after_deployment'}
+NEXT_PUBLIC_STARKNET_ARS_TOKEN_ADDRESS=${this.deployedContracts.arsToken || 'ars_token_address_after_deployment'}
+NEXT_PUBLIC_STARKNET_USDT_TOKEN_ADDRESS=${this.deployedContracts.usdtToken || 'usdt_token_address_after_deployment'}
+NEXT_PUBLIC_STARKNET_RPC_URL=https://starknet-sepolia.public.blastapi.io/rpc/v0_9
+
+# Scarb Configuration (optional - auto-detected if not set)
+# SCARB_PATH=C:\\path\\to\\scarb.exe  # Windows
+# SCARB_PATH=/usr/local/bin/scarb     # macOS/Linux
+`;
+
+    const envPath = path.join(__dirname, '../../.env.starknet.example');
+    fs.writeFileSync(envPath, envExample);
+    console.log(`📁 Archivo .env.example generado: ${envPath}`);
+  }
 }
 
-// Funciones de utilidad para testing
-async function fundAccountWithFaucet(accountAddress) {
-  console.log('\n💧 Para obtener ETH y tokens de prueba:');
-  console.log(`1. Sepolia ETH Faucet: https://starknet-faucet.vercel.app/`);
-  console.log(`2. Ingresa tu dirección: ${accountAddress}`);
-  console.log('3. USDT de prueba: usar bridge de tokens de Goerli/Sepolia');
-  console.log('4. Verificar balance antes de hacer transacciones');
-}
-
-async function deployToMainnet() {
-  console.log('\n🚨 MIGRACIÓN A MAINNET:');
-  console.log('1. Cambiar RPC_URL a mainnet');
-  console.log('2. Usar cuenta con ETH real');
-  console.log('3. Actualizar direcciones de tokens reales');
-  console.log('4. Verificar todas las configuraciones de seguridad');
-  console.log('5. Hacer testing exhaustivo en testnet primero');
-}
-
-// Exportar para uso programático
-module.exports = {
-  StarknetDeployer,
-  SEPOLIA_CONFIG,
-  fundAccountWithFaucet,
-  deployToMainnet
-};
-
-// Ejecutar si se llama directamente
+// Ejecutar si es llamado directamente
 if (require.main === module) {
   (async () => {
     const deployer = new StarknetDeployer();
@@ -497,3 +573,5 @@ if (require.main === module) {
     process.exitCode = 1; // en lugar de exit(1) para evitar cortar stdout bruscamente
   });
 }
+
+module.exports = StarknetDeployer;

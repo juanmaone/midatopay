@@ -1,4 +1,3 @@
-const { convertARSToCrypto, getExchangeRateWithMargin, validateExchangeRate } = require('./priceOracle');
 const { EMVQRGenerator, EMVQRParser } = require('./emvQRGenerator');
 const CavosService = require('./cavosService');
 const prisma = require('../config/database');
@@ -19,40 +18,37 @@ class MidatoPayService {
         throw new Error('Merchant not found');
       }
 
-      // 2. Calcular conversión ARS → Crypto
-      const conversionData = await convertARSToCrypto(amountARS, targetCrypto);
-      
-      // 3. Generar session ID único
+      // 2. Generar session ID único
       const sessionId = this.qrGenerator.generateSessionId();
       
-      // 4. Preparar datos para QR
+      // 3. Preparar datos para QR (SIN conversión - el Oracle lo hará)
       const paymentData = {
         amountARS,
         targetCrypto,
-        cryptoAmount: conversionData.cryptoAmount,
-        exchangeRate: conversionData.exchangeRate,
+        cryptoAmount: null, // El Oracle calculará esto
+        exchangeRate: null, // El Oracle calculará esto
         merchantWallet: merchant.walletAddress,
         concept,
         sessionId,
         timestamp: new Date()
       };
 
-      // 5. Validar datos
+      // 4. Validar datos básicos
       const validation = this.qrGenerator.validatePaymentData(merchant, paymentData);
       if (!validation.isValid) {
         throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
       }
 
-      // 6. Generar TLV data
+      // 5. Generar TLV data
       const tlvData = this.qrGenerator.generateEMVQR(merchant, paymentData);
       
-      // 7. Agregar QR data a paymentData
+      // 6. Agregar QR data a paymentData
       paymentData.qrCode = tlvData;
       
-      // 8. Generar QR visual
+      // 7. Generar QR visual
       const qrCodeImage = await this.qrGenerator.generateQRCodeImage(tlvData);
       
-      // 9. Guardar sesión en base de datos
+      // 8. Guardar sesión en base de datos
       console.log('💾 Guardando pago con sessionId:', sessionId);
       console.log('💾 MerchantId:', merchantId);
       console.log('💾 PaymentData:', paymentData);
@@ -66,13 +62,12 @@ class MidatoPayService {
         paymentData: {
           amountARS,
           targetCrypto,
-          cryptoAmount: conversionData.cryptoAmount,
-          exchangeRate: conversionData.exchangeRate,
+          cryptoAmount: null, // El Oracle calculará esto
+          exchangeRate: null, // El Oracle calculará esto
           sessionId,
           merchantName: merchant.name,
           merchantWallet: merchant.walletAddress
-        },
-        conversionData
+        }
       };
       
     } catch (error) {
@@ -323,9 +318,9 @@ class MidatoPayService {
           sessionId: payment.orderId,
           merchantName: payment.user.name,
           amountARS: parseFloat(payment.amount),
-          targetCrypto: parsedQRData.targetCrypto || 'STRK', // Usar datos del QR o STRK por defecto
-          cryptoAmount: parsedQRData.cryptoAmount || parseFloat(payment.amount) / 228, // Usar datos del QR o conversión STRK
-          exchangeRate: parsedQRData.exchangeRate || 228, // Usar datos del QR o rate STRK
+          targetCrypto: parsedQRData.targetCrypto || 'USDT', // Usar datos del QR o USDT por defecto
+          cryptoAmount: null, // El Oracle calculará esto
+          exchangeRate: null, // El Oracle calculará esto
           concept: payment.concept,
           expiresAt: payment.expiresAt.toISOString(),
           status: payment.status
@@ -374,15 +369,15 @@ class MidatoPayService {
       // En producción, aquí se integraría con el sistema bancario argentino
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // 🚀 EJECUTAR SWAP REAL CON CAVOS
-      console.log('🚀 Ejecutando swap ARS → Crypto con Cavos...');
+      // 🚀 EJECUTAR SWAP REAL CON ORACLE DE BLOCKCHAIN
+      console.log('🚀 Ejecutando swap ARS → Crypto con Oracle de blockchain...');
       
       const swapResult = await this.cavosService.executeARSToCryptoSwap({
         merchantWalletAddress: payment.user.walletAddress || `temp_wallet_${payment.user.id}`,
         amountARS: arsPaymentData.amount,
         targetCrypto: arsPaymentData.targetCrypto,
-        cryptoAmount: arsPaymentData.cryptoAmount,
-        exchangeRate: arsPaymentData.exchangeRate,
+        cryptoAmount: null, // El Oracle calculará esto
+        exchangeRate: null, // El Oracle calculará esto
         sessionId: sessionId
       });
 
@@ -401,13 +396,13 @@ class MidatoPayService {
         }
       });
 
-      // Crear transacción de crypto con datos reales
+      // Crear transacción de crypto con datos del Oracle
       const transaction = await prisma.transaction.create({
         data: {
           paymentId: payment.id,
-          amount: arsPaymentData.cryptoAmount,
+          amount: swapResult.cryptoAmount, // Del Oracle
           currency: arsPaymentData.targetCrypto,
-          exchangeRate: arsPaymentData.exchangeRate,
+          exchangeRate: swapResult.exchangeRate, // Del Oracle
           finalAmount: parseFloat(payment.amount),
           finalCurrency: 'ARS',
           status: 'CONFIRMED',
@@ -422,7 +417,7 @@ class MidatoPayService {
       console.log('✅ Pago procesado exitosamente:', {
         paymentId: payment.id,
         transactionId: transaction.id,
-        cryptoAmount: arsPaymentData.cryptoAmount,
+        cryptoAmount: swapResult.cryptoAmount, // Del Oracle
         targetCrypto: arsPaymentData.targetCrypto,
         blockchainTxHash: swapResult.transactionHash,
         explorerUrl: swapResult.explorerUrl,
@@ -435,9 +430,9 @@ class MidatoPayService {
         message: swapResult.mode === 'SIMULATION' 
           ? 'Pago procesado exitosamente (Modo Simulación)' 
           : 'Pago procesado exitosamente',
-        cryptoAmount: arsPaymentData.cryptoAmount,
+        cryptoAmount: swapResult.cryptoAmount, // Del Oracle
         targetCrypto: arsPaymentData.targetCrypto,
-        exchangeRate: arsPaymentData.exchangeRate,
+        exchangeRate: swapResult.exchangeRate, // Del Oracle
         blockchainTxHash: swapResult.transactionHash,
         explorerUrl: swapResult.explorerUrl,
         gasUsed: swapResult.gasUsed,
@@ -492,9 +487,9 @@ class MidatoPayService {
           sessionId: fullMatch,
           timestamp: timestamp,
           hash: hash,
-          targetCrypto: targetCryptoMatch ? targetCryptoMatch[1] : 'STRK',
-          cryptoAmount: cryptoAmountMatch ? parseFloat(cryptoAmountMatch[1]) : null,
-          exchangeRate: exchangeRateMatch ? parseFloat(exchangeRateMatch[1]) : null,
+          targetCrypto: targetCryptoMatch ? targetCryptoMatch[1] : 'USDT',
+          cryptoAmount: null, // El Oracle calculará esto
+          exchangeRate: null, // El Oracle calculará esto
           qrData: qrData
         };
       }
