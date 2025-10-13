@@ -14,13 +14,12 @@ export function OracleConversionPreview({
 }: OracleConversionPreviewProps) {
   const [conversionResult, setConversionResult] = useState<{
     cryptoAmount: number;
-    exchangeRate: number;
     source: string;
   } | null>(null);
   
   const { convertARSToCrypto, loading, error } = useOracleConversion();
 
-  // Consultar Oracle real cuando cambia el monto (con debounce)
+  // Consultar Oracle real cuando cambia el monto (con debounce mínimo)
   useEffect(() => {
     if (!amountARS || amountARS <= 0) {
       setConversionResult(null);
@@ -40,7 +39,7 @@ export function OracleConversionPreview({
       } catch (err) {
         console.error('❌ Oracle error:', err);
       }
-    }, 300); // Debounce de 300ms adicional
+    }, 1000); // Debounce mínimo de 1 segundo
 
     return () => clearTimeout(timeoutId);
   }, [amountARS, targetCrypto, convertARSToCrypto]);
@@ -121,10 +120,10 @@ export function OracleConversionPreview({
             </div>
             <div>
               <p className="text-lg font-bold" style={{ color: '#009393', fontFamily: 'Kufam, sans-serif' }}>
-                Recibirás: {conversionResult.cryptoAmount.toFixed(6)} USDT
+                Recibirás: {Number(conversionResult.cryptoAmount).toFixed(6)} USDT
               </p>
               <p className="text-sm" style={{ color: '#5d5d5d', fontFamily: 'Kufam, sans-serif' }}>
-                Rate: 1 USDT = {conversionResult.exchangeRate.toLocaleString()} ARS
+                Conversión directa del Oracle
               </p>
             </div>
           </div>
