@@ -4,7 +4,7 @@ class StarknetOracleService {
   constructor() {
     // Configuración de Starknet Sepolia
     this.rpcUrl = 'https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_9/b6oJemkCmlgEGq1lXC5uTXwOHZA14WNP';
-    this.oracleAddress = '0x0288338f6ffeccff8d74780f2758cf031605cd38c867da249006982ca9b53692';
+    this.oracleAddress = '0x01d5f1e352b69065229f872828a2ccaf9182302a34a326fe503df66c042e498c';
     this.usdtTokenAddress = '0x040898923d06af282d4a647966fc65c0f308020c43388026b56ef833eda0efdc';
     
     // ABI del Oracle contract
@@ -137,19 +137,19 @@ class StarknetOracleService {
     try {
       console.log(`🔍 Obteniendo cotización ARS → USDT del Oracle para ${amountARS} ARS`);
       
-      // Convertir amountARS a u128 con escala de 6 decimales (SCALE = 1_000_000)
-      const amountARS_u128 = Math.floor(amountARS * 1000000);
+      // Convertir amountARS a u128 con escala de 18 decimales (SCALE = 1_000_000_000_000_000_000 según el contrato)
+      const amountARS_u128 = Math.floor(amountARS * 1000000000000000000);
       const amountARS_hex = '0x' + amountARS_u128.toString(16);
       
       // Llamar a quote_ars_to_usdt
       const result = await this.callOracleFunction('quote_ars_to_usdt', [amountARS_hex]);
       
-      // El resultado viene en formato hexadecimal, convertir a decimal (dividir por escala de 6 decimales)
+      // El resultado viene en formato hexadecimal, convertir a decimal (sin dividir - ya está en la escala correcta)
       const usdtAmount_u128 = parseInt(result[0], 16);
-      const usdtAmount = usdtAmount_u128 / 1000000;
+      const usdtAmount = usdtAmount_u128; // No dividir - el Oracle ya devuelve el valor correcto
       
-      // Calcular el rate
-      const rate = amountARS / usdtAmount;
+      // Calcular el rate (evitar división por cero)
+      const rate = usdtAmount > 0 ? amountARS / usdtAmount : 0;
       
       console.log(`✅ Cotización obtenida del Oracle: ${amountARS} ARS = ${usdtAmount} USDT (Rate: ${rate})`);
       

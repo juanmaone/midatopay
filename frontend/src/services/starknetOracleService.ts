@@ -1,25 +1,21 @@
-// StarknetOracleService.ts
-// Servicio para interactuar con un Oracle (Cairo v2) y un ERC20 (USDT) en Starknet
-// - Usa BigInt end-to-end (sin perder precisión)
-// - Recompone u256 (low/high) correctamente
-// - Evita selectores hardcodeados (usa getSelectorFromName)
-// - Formatea unidades con decimales configurables
+// StarknetServices.ts
+// - Un solo archivo con dos servicios:
+//   1) StarknetBalanceService -> balanceOf() con USDT_DECIMALS_BALANCE = 18n
+//   2) StarknetQuoteService   -> quote_ars_to_usdt con USDT_DECIMALS = 0n
+// - BigInt end-to-end, helpers para u256, format/parse units sin perder precisión.
 
 import {
   RpcProvider,
   Contract,
-  stark,
-  uint256,
-  CairoOption,
   BigNumberish,
   shortString,
 } from 'starknet';
 
 // ==========================
-// Configuración de despliegues
+// Config de despliegues
 // ==========================
 const CONTRACTS = {
-  oracle: '0x0288338f6ffeccff8d74780f2758cf031605cd38c867da249006982ca9b53692',
+  oracle: '0x01d5f1e352b69065229f872828a2ccaf9182302a34a326fe503df66c042e498c',
   usdtToken: '0x040898923d06af282d4a647966fc65c0f308020c43388026b56ef833eda0efdc',
 };
 
@@ -33,21 +29,20 @@ const SEPOLIA_CONFIG = {
 };
 
 // ==========================
-// Decimales (ajusta según tu caso)
+// Decimales (según función)
 // ==========================
-// USDT en Starknet suele tener 6 decimales
-const USDT_DECIMALS = BigInt(0);
+// ❗ Para COTIZACIÓN (quote_ars_to_usdt) mantener 0n (no modificar)
+const USDT_DECIMALS = BigInt(0); // ✅ pedido explícito
 
-// ¿Cómo espera el oráculo la ENTRADA de ARS?
-// Si el oráculo espera "pesos enteros": ARS_DECIMALS = 0n (por defecto).
-// Si espera centavos: 2n. Si 6/18, setea 6n/18n.
+// ❗ Para BALANCE (balanceOf) usar 6n
+const USDT_DECIMALS_BALANCE = BigInt(18); // ✅ pedido explícito
+
+// Entrada esperada por el oráculo para ARS (0 decimales - el backend ya hace la conversión a 6 decimales)
 let ARS_DECIMALS = BigInt(0);
 
-// ¿En qué decimales DEVUELVE el oráculo los USDT?
-// Lo más común: 6n. Si tu oráculo devuelve enteros (0n) o 18n, ajusta acá.
+// Decimales que DEVUELVE el oráculo para USDT (por defecto 0n)
 let ORACLE_USDT_DECIMALS = BigInt(0);
 
-// Podés exponer setters si querés ajustar en runtime:
 export function setArsDecimals(decimals: number) {
   ARS_DECIMALS = BigInt(decimals);
 }
@@ -58,7 +53,6 @@ export function setOracleUsdtDecimals(decimals: number) {
 // ==========================
 // ABIs mínimos
 // ==========================
-
 const ORACLE_ABI = [
   {
     name: 'quote_ars_to_usdt',
@@ -104,15 +98,31 @@ const ERC20_ABI = [
 const TEN = BigInt(10);
 
 function toBN(x: BigNumberish): bigint {
-  // stark.assert y helpers aceptan hex / decimal strings; acá homogenizamos a BigInt
   if (typeof x === 'bigint') return x;
   if (typeof x === 'number') return BigInt(x);
   const s = String(x);
-  return s.startsWith('0x') ? BigInt(s) : BigInt(s);
+
+  // Limpiar strings con comas/espacios
+  if (s.includes(',')) {
+    const cleaned = s.replace(/[,\s]/g, '');
+    return cleaned.startsWith('0x') ? BigInt(cleaned) : BigInt('0x' + cleaned);
+  }
+
+  if (s.startsWith('0x')) return BigInt(s);
+
+  try {
+    return BigInt(s);
+  } catch (error) {
+    try {
+      return BigInt('0x' + s);
+    } catch (hexError) {
+      throw new Error(`No se pudo convertir "${s}" a BigInt`);
+    }
+  }
 }
 
 function u256ToBN(u: any): bigint {
-  // Admite {low, high} o [low, high] o { balance: {low, high}}
+  // Admite {low, high}, [low, high], { balance: {low, high} } o single felt
   if (u?.low !== undefined && u?.high !== undefined) {
     return toBN(u.low) + (toBN(u.high) << BigInt(128));
   }
@@ -123,12 +133,19 @@ function u256ToBN(u: any): bigint {
     const b = u.balance;
     return toBN(b.low) + (toBN(b.high) << BigInt(128));
   }
-  // fallback: si vino como single felt (u128 o ya unificado)
   return toBN(u);
 }
 
+function pow10(n: bigint): bigint {
+  // 10n ** n (compat con TS)
+  let r = BigInt(1);
+  for (let i = BigInt(0); i < n; i++) r *= BigInt(10);
+  return r;
+}
+
 function formatUnits(raw: bigint, decimals: bigint): string {
-  const base = toBN(Math.pow(10, Number(decimals)));
+  if (decimals === BigInt(0)) return raw.toString();
+  const base = pow10(decimals);
   const whole = raw / base;
   const fracRaw = raw % base;
   if (fracRaw === BigInt(0)) return whole.toString();
@@ -137,20 +154,18 @@ function formatUnits(raw: bigint, decimals: bigint): string {
 }
 
 function parseUnits(human: string | number, decimals: bigint): bigint {
-  // convierte "10000.12" con N decimales a BigInt
   const s = String(human);
-  if (!s.includes('.')) return toBN(s) * toBN(Math.pow(10, Number(decimals)));
+  if (!s.includes('.')) return toBN(s) * pow10(decimals);
   const [w, f] = s.split('.');
-  const frac = f.slice(0, Number(decimals)).padEnd(Number(decimals), '0'); // recorta/llena
-  return toBN(w) * toBN(Math.pow(10, Number(decimals))) + toBN(frac || '0');
+  const frac = f.slice(0, Number(decimals)).padEnd(Number(decimals), '0');
+  return toBN(w) * pow10(decimals) + (frac ? toBN(frac) : BigInt(0));
 }
 
 // ==========================
-// Servicio
+// Servicio SOLO Balance (18n)
 // ==========================
-export class StarknetOracleService {
+export class StarknetBalanceService {
   private provider: RpcProvider;
-  private oracle: Contract;
   private usdt: Contract;
 
   constructor() {
@@ -158,26 +173,17 @@ export class StarknetOracleService {
       nodeUrl: SEPOLIA_CONFIG.rpcUrl,
       chainId: SEPOLIA_CONFIG.chainId as any,
     });
-
-    this.oracle = new Contract(ORACLE_ABI as any, CONTRACTS.oracle, this.provider);
     this.usdt = new Contract(ERC20_ABI as any, CONTRACTS.usdtToken, this.provider);
   }
 
-  // --- Info del token USDT (opcional: lee on-chain) ---
-  async getUSDTTokenInfo(): Promise<{
-    address: string;
-    symbol: string;
-    decimals: number;
-  }> {
+  // Info del token USDT (opcional on-chain)
+  async getUSDTTokenInfo(): Promise<{ address: string; symbol: string; decimals: number }> {
     try {
-      // Si tu contrato tiene estos métodos estándar, los leemos:
       let symbol = 'USDT';
-      let decimals = Number(USDT_DECIMALS);
+      let decimals = Number(USDT_DECIMALS_BALANCE);
 
       try {
         const sym = await this.usdt.call('symbol', [], { blockIdentifier: 'latest' });
-        // symbol puede venir como felt; starknet.js ofrece shortString.decodeShortString
-        // Si falla decode, dejamos 'USDT'
         const felt = Array.isArray(sym) ? sym[0] : sym;
         symbol = shortString.decodeShortString(String(felt));
       } catch {}
@@ -185,64 +191,59 @@ export class StarknetOracleService {
       try {
         const dec = await this.usdt.call('decimals', [], { blockIdentifier: 'latest' });
         const val = Array.isArray(dec) ? Number(dec[0]) : Number(dec);
-        if (!Number.isNaN(val) && val >= 0 && val <= 255) {
-          decimals = val;
-        }
+        if (!Number.isNaN(val) && val >= 0 && val <= 255) decimals = val;
       } catch {}
 
-      return {
-        address: CONTRACTS.usdtToken,
-        symbol,
-        decimals,
-      };
-    } catch (e) {
-      // si algo falla, devolvemos la config local
-      return {
-        address: CONTRACTS.usdtToken,
-        symbol: 'USDT',
-        decimals: Number(USDT_DECIMALS),
-      };
+      return { address: CONTRACTS.usdtToken, symbol, decimals };
+    } catch {
+      return { address: CONTRACTS.usdtToken, symbol: 'USDT', decimals: Number(USDT_DECIMALS_BALANCE) };
     }
   }
 
-  // --- Balance USDT de una address ---
+  // Balance USDT formateado con 18 decimales
   async getUSDTBalance(accountAddress: string): Promise<{
     address: string;
     balanceRaw: bigint;
-    balance: string; // humano (decimales)
+    balance: string;
   }> {
-    // balanceOf retorna u256; recomponemos
     const res: any = await this.usdt.call('balanceOf', [accountAddress], { blockIdentifier: 'latest' });
     const raw = u256ToBN(res);
-    const human = formatUnits(raw, USDT_DECIMALS);
-    return {
-      address: accountAddress,
-      balanceRaw: raw,
-      balance: human,
-    };
+    const human = formatUnits(raw, USDT_DECIMALS_BALANCE);
+    return { address: accountAddress, balanceRaw: raw, balance: human };
+  }
+}
+
+// ==========================
+// Servicio SOLO Cotización (0n)
+// ==========================
+export class StarknetQuoteService {
+  private provider: RpcProvider;
+  private oracle: Contract;
+
+  constructor() {
+    this.provider = new RpcProvider({
+      nodeUrl: SEPOLIA_CONFIG.rpcUrl,
+      chainId: SEPOLIA_CONFIG.chainId as any,
+    });
+    this.oracle = new Contract(ORACLE_ABI as any, CONTRACTS.oracle, this.provider);
   }
 
-  // --- Cotización ARS → USDT ---
   /**
-   * amountARSHuman: cantidad de ARS en formato humano (por ejemplo "10000" si son pesos enteros)
-   * Se escala según ARS_DECIMALS para cumplir con lo que espera el oráculo.
-   * Retorna USDT en humano (según ORACLE_USDT_DECIMALS).
+   * amountARSHuman: cantidad de ARS en formato humano (p.e. "10000")
+   * Escala según ARS_DECIMALS (entrada del oráculo).
+   * Devuelve USDT formateado según ORACLE_USDT_DECIMALS (por defecto 0n).
    */
   async getARSToUSDTQuote(amountARSHuman: string | number): Promise<{
-    amountARS: string; // humano
-    amountUSDT: string; // humano
-    amountUSDT_raw: bigint; // raw según ORACLE_USDT_DECIMALS
+    amountARS: string;
+    amountUSDT: string;
+    amountUSDT_raw: bigint;
     source: string;
   }> {
-    // Escalamos la entrada como el oráculo espera
     const amountARS_raw = parseUnits(amountARSHuman, ARS_DECIMALS);
-
-    // Llamamos al oráculo: u128 in → u128 out (starknet.js maneja el encoding)
     const res: any = await this.oracle.call('quote_ars_to_usdt', [amountARS_raw.toString()], { blockIdentifier: 'latest' });
-    const rawUSDT = u256ToBN(res); // aunque sea u128, u256ToBN soporta single felt
+    const rawUSDT = u256ToBN(res); // aunque sea u128, soporta single felt
 
-    // Formateamos la salida según lo que devuelve el oráculo (por defecto, 6 decimales)
-    const usdtHuman = formatUnits(rawUSDT, ORACLE_USDT_DECIMALS);
+    const usdtHuman = formatUnits(rawUSDT, ORACLE_USDT_DECIMALS); // por defecto 0n
     const arsHuman = formatUnits(amountARS_raw, ARS_DECIMALS);
 
     return {
@@ -253,24 +254,20 @@ export class StarknetOracleService {
     };
   }
 
-  // --- Info del oráculo (ping + rate aproximado) ---
   /**
-   * Calcula un rate aproximado consultando una muestra (por ejemplo, 1000 ARS humanos).
    * rate ≈ ARS_human / USDT_human
+   * Usa 6 decimales de escala para el rate textual.
    */
   async getOracleInfo(sampleArsHuman: string | number = '1000'): Promise<{
     address: string;
     isActive: boolean;
-    rate_ars_per_usdt: string; // string para no perder decimales
+    rate_ars_per_usdt: string;
   }> {
     const quote = await this.getARSToUSDTQuote(sampleArsHuman);
-    // rate = ARS / USDT
-    const ars = parseUnits(quote.amountARS, BigInt(0)); // amountARS ya está en humano sin decimales adicionales
-    const usdt = parseUnits(quote.amountUSDT, BigInt(0)); // tomamos texto entero -> parse int
-    // Mejor obtener rate en decimal usando BigInt con escala:
-    // rate = (ARS * 10^6) / USDT  → 6 decimales en el rate
-    const SCALE = BigInt(Math.pow(10, 6));
-    const rateScaled = (toBN(ars) * SCALE) / (toBN(usdt) === BigInt(0) ? BigInt(1) : toBN(usdt));
+    const SCALE = BigInt(1_000_000);
+    const ars = parseUnits(quote.amountARS, BigInt(0));  // texto → entero
+    const usdt = parseUnits(quote.amountUSDT, BigInt(0)); // texto → entero
+    const rateScaled = (ars * SCALE) / (usdt === BigInt(0) ? BigInt(1) : usdt);
     const rateStr = formatUnits(rateScaled, BigInt(6));
     return {
       address: CONTRACTS.oracle,
@@ -281,24 +278,30 @@ export class StarknetOracleService {
 }
 
 // ==========================
-// Ejemplo de uso
+// Instancias opcionales
 // ==========================
-// const svc = new StarknetOracleService();
-// // Si tu oráculo espera ARS con 2 decimales (centavos):
-// setArsDecimals(0);            // 0 si espera pesos enteros; 2 si espera centavos; 6/18 si corresponde
-// setOracleUsdtDecimals(6);     // 6 si el oráculo devuelve micro-USDT
-//
-// const q = await svc.getARSToUSDTQuote('10000'); // 10,000 ARS humanos
-// console.log(q); // { amountARS: '10000', amountUSDT: '9.999...' ~10 si rate=1000 }
-//
-// const bal = await svc.getUSDTBalance('0x...');
-// console.log(bal);
-//
-// const info = await svc.getUSDTTokenInfo();
-// console.log(info);
-//
-// const oracleInfo = await svc.getOracleInfo(1000);
-// console.log(oracleInfo);
+export const starknetBalanceService = new StarknetBalanceService();
+export const starknetQuoteService = new StarknetQuoteService();
 
-// Instancia singleton
-export const starknetOracleService = new StarknetOracleService();
+/*
+==========================
+Ejemplo de uso
+==========================
+import { starknetBalanceService, starknetQuoteService, setArsDecimals, setOracleUsdtDecimals } from './StarknetServices';
+
+// Para el oráculo, si necesitás ajustar escalas:
+setArsDecimals(0);            // 0 si el oráculo espera pesos enteros; 2 si centavos; 6/18 si corresponde
+setOracleUsdtDecimals(0);     // por defecto 0n (mantener), o setear 6 si el oráculo devuelve micro-USDT
+
+// Cotización (decimales USDT = 0n)
+const q = await starknetQuoteService.getARSToUSDTQuote('10000');
+console.log(q);
+
+// Balance (formateo a 18 decimales)
+const bal = await starknetBalanceService.getUSDTBalance('0x...');
+console.log(bal);
+
+// Info del oráculo
+const oracleInfo = await starknetQuoteService.getOracleInfo(1000);
+console.log(oracleInfo);
+*/

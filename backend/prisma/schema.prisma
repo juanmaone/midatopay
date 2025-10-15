@@ -17,6 +17,9 @@ model User {
   name         String
   phone        String?
   walletAddress String?
+  privateKey   String?  // Clave privada encriptada
+  publicKey    String?  // Clave pública
+  walletCreatedAt DateTime? // Fecha de creación de la wallet
   role         UserRole @default(MERCHANT)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -51,7 +54,8 @@ model Payment {
 
 model Transaction {
   id                String            @id @default(cuid())
-  paymentId         String
+  paymentId         BigInt            // u256 equivalente usando BigInt (campo escalable)
+  paymentIdString   String            // Referencia a Payment.id para la relación
   amount            Decimal           @db.Decimal(18, 8)
   currency          String
   exchangeRate      Decimal?          @db.Decimal(18, 8)
@@ -68,7 +72,7 @@ model Transaction {
   // Relaciones
   userId    String
   user      User    @relation(fields: [userId], references: [id])
-  payment   Payment @relation(fields: [paymentId], references: [id])
+  payment   Payment @relation(fields: [paymentIdString], references: [id])
 
   @@map("transactions")
 }

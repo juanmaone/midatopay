@@ -1,6 +1,6 @@
 // Hook para manejar conversiones ARS → USDT usando Oracle real de blockchain
 import { useState } from 'react';
-import { starknetOracleService } from '@/services/starknetOracleService';
+import { starknetQuoteService } from '@/services/starknetOracleService';
 
 interface OracleConversionResult {
   cryptoAmount: number;
@@ -22,14 +22,14 @@ export function useOracleConversion() {
 
     try {
       // Llamar al Oracle directamente
-      const result = await starknetOracleService.getARSToUSDTQuote(amountARS);
+      const result = await starknetQuoteService.getARSToUSDTQuote(amountARS);
       
       if (!result) {
         throw new Error('Oracle no disponible');
       }
       
       return {
-        cryptoAmount: result.amountUSDT,
+        cryptoAmount: Number(result.amountUSDT),
         source: result.source
       };
     } catch (err) {

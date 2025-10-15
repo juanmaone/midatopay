@@ -16,19 +16,20 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { AegisProvider, useAegis } from '@cavos/aegis'
-import cavosConfig from '../../../cavos.config'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useUSDTBalance } from '@/hooks/useUSDTBalance'
+import { useWalletManager } from '@/hooks/useWalletManager'
+import { WalletSetup } from '@/components/WalletSetup'
 
-// Componente interno que usa Cavos
+// Componente interno que usa WalletManager
 function DashboardContent() {
   const { user, token, isAuthenticated, isLoading } = useAuth()
   const { logout, setUser } = useAuthActions()
   const router = useRouter()
-  const { aegisAccount, isConnected } = useAegis()
+  const { wallet, account, isConnected, isLoading: walletLoading, error: walletError } = useWalletManager()
   const { transactions, loading: transactionsLoading, error: transactionsError } = useTransactions()
-  const { balance: usdtBalance, isLoading: usdtBalanceLoading, error: usdtBalanceError } = useUSDTBalance(user?.walletAddress)
+  const { balance: usdtBalance, isLoading: usdtBalanceLoading, error: usdtBalanceError } = useUSDTBalance(wallet?.address)
+  
   const [stats, setStats] = useState({
     totalPayments: 5,
     pendingPayments: 1,
@@ -49,37 +50,36 @@ function DashboardContent() {
   })
 
   // Estado para wallet Cavos (usando estado real de Cavos)
-  const [cavosWallet, setCavosWallet] = useState({
+  const [merchantWallet, setMerchantWallet] = useState({
     isConnected: isConnected,
-    address: isConnected ? aegisAccount.address : null,
+    address: wallet?.address || null,
     balance: null as string | null,
     isLoading: false
   })
 
   // Inicializar estado de wallet si ya existe una guardada
   useEffect(() => {
-    if (user?.walletAddress && !cavosWallet.isConnected) {
-      console.log('🔄 Inicializando wallet existente:', user.walletAddress)
-      setCavosWallet({
+    if (wallet?.address && !merchantWallet.isConnected) {
+      console.log('🔄 Inicializando wallet existente:', wallet.address)
+      setMerchantWallet({
         isConnected: true,
-        address: user.walletAddress,
-        balance: '0.0 STRK', // Balance simulado
+        address: wallet.address,
+        balance: '0.0 USDT',
         isLoading: false
       })
     }
-  }, [user?.walletAddress])
+  }, [wallet?.address])
 
-  // Actualizar estado cuando cambie la conexión de Cavos
+  // Actualizar estado cuando cambie la wallet
   useEffect(() => {
-    // Solo actualizar si no tenemos una wallet guardada o si Cavos está realmente conectado
-    if (isConnected && aegisAccount.address) {
-      setCavosWallet(prev => ({
+    if (isConnected && wallet?.address) {
+      setMerchantWallet(prev => ({
         ...prev,
         isConnected: true,
-        address: aegisAccount.address
+        address: wallet.address
       }))
     }
-  }, [isConnected, aegisAccount.address])
+  }, [isConnected, wallet?.address])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -93,84 +93,49 @@ function DashboardContent() {
     router.push('/')
   }
 
-  // Funciones para manejar Cavos
-  const connectCavosWallet = async () => {
-    setCavosWallet(prev => ({ ...prev, isLoading: true }))
+  // Funciones para manejar WalletManager
+  const connectMerchantWallet = async () => {
+    setMerchantWallet(prev => ({ ...prev, isLoading: true }))
     try {
-      // Verificar si ya hay una wallet guardada en la BD
-      if (user?.walletAddress) {
-        console.log('🔄 Reconectando a wallet existente:', user.walletAddress)
+      if (wallet?.address) {
+        console.log('✅ Wallet ya configurada:', wallet.address)
         
-        // Reconectar a wallet existente usando Cavos
-        // Nota: En Cavos, necesitamos usar la misma private key para reconectar
-        // Por ahora, vamos a simular la reconexión
-        
-        setCavosWallet({
+        setMerchantWallet({
           isConnected: true,
-          address: user.walletAddress,
-          balance: '0.0 STRK', // Balance simulado
+          address: wallet.address,
+          balance: '0.0 USDT',
           isLoading: false
         })
         
-        toast.success('Wallet Cavos reconectada exitosamente')
+        toast.success('Wallet conectada exitosamente')
       } else {
-        // Crear nueva wallet solo si no existe una previa
-        console.log('🆕 Creando nueva wallet...')
-        const privateKey = await aegisAccount.deployAccount()
-        console.log('Nueva wallet creada:', privateKey)
-        
-        // Guardar wallet en la base de datos
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/update-wallet`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            walletAddress: aegisAccount.address
-          })
-        })
-        
-        if (!response.ok) {
-          throw new Error('Error guardando wallet en la base de datos')
-        }
-        
-        // Actualizar el estado del usuario con la nueva wallet
-        const updatedUser = { ...user!, walletAddress: aegisAccount.address || undefined }
-        setUser(updatedUser)
-        
-        setCavosWallet({
-          isConnected: true,
-          address: aegisAccount.address,
-          balance: '0.0 STRK',
-          isLoading: false
-        })
-        
-        toast.success('Wallet Cavos creada y conectada exitosamente')
+        toast.error('No hay wallet configurada. Usa el componente WalletSetup.')
+        setMerchantWallet(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
-      console.error('Error connecting Cavos wallet:', error)
-      toast.error('Error conectando wallet Cavos')
-      setCavosWallet(prev => ({ ...prev, isLoading: false }))
+      console.error('Error connecting wallet:', error)
+      toast.error('Error conectando wallet')
+      setMerchantWallet(prev => ({ ...prev, isLoading: false }))
     }
   }
 
-  const disconnectCavosWallet = async () => {
+  const disconnectMerchantWallet = async () => {
     try {
-      await aegisAccount.disconnect()
-      setCavosWallet({
+      // El WalletManager maneja la desconexión
+      setMerchantWallet({
         isConnected: false,
         address: null,
         balance: null,
         isLoading: false
       })
-      toast.success('Wallet Cavos desconectada')
+      toast.success('Wallet desconectada')
     } catch (error) {
       console.error('Error disconnecting wallet:', error)
       toast.error('Error desconectando wallet')
     }
   }
 
+  // Early returns después de todos los hooks
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -184,6 +149,15 @@ function DashboardContent() {
 
   if (!isAuthenticated || !user) {
     return null
+  }
+
+  // Mostrar WalletSetup si no hay wallet conectada
+  if (!isConnected && !walletLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-teal-50 flex items-center justify-center p-4">
+        <WalletSetup />
+      </div>
+    );
   }
 
   return (
@@ -205,16 +179,16 @@ function DashboardContent() {
             <div className="flex items-center space-x-4">
               {/* Wallet Status Indicator */}
               <div className="flex items-center space-x-2 px-3 py-1 rounded-full" style={{ 
-                backgroundColor: cavosWallet.isConnected ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                border: `1px solid ${cavosWallet.isConnected ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
+                backgroundColor: merchantWallet.isConnected ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                border: `1px solid ${merchantWallet.isConnected ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
               }}>
                 <div className="w-2 h-2 rounded-full" style={{ 
-                  backgroundColor: cavosWallet.isConnected ? '#10b981' : '#ef4444' 
+                  backgroundColor: merchantWallet.isConnected ? '#10b981' : '#ef4444' 
                 }}></div>
                 <span className="text-xs font-medium" style={{ 
-                  color: cavosWallet.isConnected ? '#10b981' : '#ef4444' 
+                  color: merchantWallet.isConnected ? '#10b981' : '#ef4444' 
                 }}>
-                  {cavosWallet.isConnected ? 'Wallet Conectada' : 'Wallet Desconectada'}
+                  {merchantWallet.isConnected ? 'Wallet Conectada' : 'Wallet Desconectada'}
                 </span>
               </div>
               
@@ -345,7 +319,7 @@ function DashboardContent() {
           </motion.div>
 
         {/* Sección de Información de Wallet - Solo mostrar cuando esté conectada */}
-        {cavosWallet.isConnected && (
+        {merchantWallet.isConnected && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -375,7 +349,7 @@ function DashboardContent() {
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <h4 className="font-semibold text-green-800 mb-2" style={{ fontFamily: 'Kufam, sans-serif', fontWeight: 700 }}>Dirección</h4>
                     <p className="text-sm font-mono text-green-800 break-all" style={{ fontFamily: 'Kufam, sans-serif', fontWeight: 400 }}>
-                      {cavosWallet.address}
+                      {merchantWallet.address}
                     </p>
                     <p className="text-xs text-green-600 mt-1" style={{ fontFamily: 'Kufam, sans-serif', fontWeight: 400 }}>Dirección de tu wallet</p>
                   </div>
@@ -427,14 +401,14 @@ function DashboardContent() {
             {/* Wallet Cavos */}
             <Card className="group cursor-pointer hover:scale-105 transition-all duration-200" style={{ 
               backgroundColor: '#fff5f0', 
-              borderColor: cavosWallet.isConnected ? '#fe6c1c' : '#5d5d5d', 
+              borderColor: merchantWallet.isConnected ? '#fe6c1c' : '#5d5d5d', 
               boxShadow: '0 10px 30px rgba(0,0,0,0.08)', 
               backdropFilter: 'blur(10px)' 
             }}>
-              <CardContent className="p-4 text-center" onClick={cavosWallet.isConnected ? disconnectCavosWallet : connectCavosWallet}>
+              <CardContent className="p-4 text-center" onClick={merchantWallet.isConnected ? disconnectMerchantWallet : connectMerchantWallet}>
                 <div className="flex justify-center mb-3">
                   <div className="p-2 rounded-lg" style={{ 
-                    background: cavosWallet.isConnected 
+                    background: merchantWallet.isConnected 
                       ? 'linear-gradient(135deg,#fe6c1c,#fe9c42)' 
                       : 'linear-gradient(135deg,#5d5d5d,#5d5d5d)' 
                   }}>
@@ -442,25 +416,25 @@ function DashboardContent() {
           </div>
                 </div>
                 <p className="text-sm font-semibold" style={{ color: '#5d5d5d', fontFamily: 'Kufam, sans-serif', fontWeight: 700 }}>
-                  {cavosWallet.isConnected ? 'Wallet Conectada' : 'Conectar Wallet'}
+                  {merchantWallet.isConnected ? 'Wallet Conectada' : 'Conectar Wallet'}
                 </p>
                 <p className="text-xs mt-1" style={{ color: '#5d5d5d', fontFamily: 'Kufam, sans-serif', fontWeight: 400 }}>
-                  {cavosWallet.isConnected ? 'Cavos Aegis' : 'Cavos Aegis'}
+                  {merchantWallet.isConnected ? 'Cavos Aegis' : 'Cavos Aegis'}
                 </p>
-                {cavosWallet.isLoading && (
+                {merchantWallet.isLoading && (
                   <div className="mt-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500 mx-auto"></div>
                     <p className="text-xs mt-1" style={{ color: '#5d5d5d' }}>
-                      {cavosWallet.isConnected ? 'Desconectando...' : 'Conectando...'}
+                      {merchantWallet.isConnected ? 'Desconectando...' : 'Conectando...'}
                     </p>
               </div>
                 )}
-                {!cavosWallet.isLoading && !cavosWallet.isConnected && (
+                {!merchantWallet.isLoading && !merchantWallet.isConnected && (
                   <p className="text-xs mt-2" style={{ color: '#5d5d5d' }}>
                     Click para conectar
                   </p>
                 )}
-                {!cavosWallet.isLoading && cavosWallet.isConnected && (
+                {!merchantWallet.isLoading && merchantWallet.isConnected && (
                   <p className="text-xs mt-2" style={{ color: '#fe6c1c' }}>
                     Click para desconectar
                   </p>
@@ -566,9 +540,5 @@ function DashboardContent() {
 
 // Componente principal que envuelve todo con AegisProvider
 export default function DashboardPage() {
-  return (
-    <AegisProvider config={cavosConfig}>
-      <DashboardContent />
-    </AegisProvider>
-  )
+  return <DashboardContent />
 }

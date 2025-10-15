@@ -125,10 +125,10 @@ export function QRModal({
             </p>
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
               <p className="text-sm text-blue-800" style={{ fontFamily: 'Kufam, sans-serif' }}>
-                <span className="font-semibold">Recibirás:</span> {qrData.paymentData.cryptoAmount.toFixed(6)} {qrData.paymentData.targetCrypto}
+                <span className="font-semibold">Recibirás:</span> {qrData.paymentData.cryptoAmount?.toFixed(6) || 'Calculando...'} {qrData.paymentData.targetCrypto || 'USDT'}
               </p>
               <p className="text-xs text-blue-600 mt-1" style={{ fontFamily: 'Kufam, sans-serif' }}>
-                Rate: 1 {qrData.paymentData.targetCrypto} = {qrData.paymentData.exchangeRate.toLocaleString()} ARS
+                Rate: 1 {qrData.paymentData.targetCrypto || 'USDT'} = {qrData.paymentData.exchangeRate?.toLocaleString() || 'Calculando...'} ARS
               </p>
             </div>
           </div>

@@ -41,7 +41,27 @@ class MidatoPayService {
       // 5. Generar QR visual
       const qrCodeImage = await this.qrGenerator.generateQRCodeImage(tlvData);
       
-      // 6. Guardar sesión en base de datos
+      // 6. QR generado exitosamente - starkli se ejecutará al escanear
+      console.log('✅ QR generado exitosamente - listo para escanear');
+
+      // 7. Obtener cotización del Oracle para mostrar en el QR
+      let cryptoAmount = 0;
+      let exchangeRate = 0;
+      try {
+        const StarknetOracleService = require('./starknetOracleService');
+        const oracle = new StarknetOracleService();
+        const quote = await oracle.getARSToUSDTQuote(amountARS);
+        cryptoAmount = quote.amountUSDT || quote.amountUSDT_raw || 0;
+        exchangeRate = quote.rate || 1000;
+        console.log('✅ Cotización Oracle obtenida:', { cryptoAmount, exchangeRate });
+      } catch (error) {
+        console.warn('⚠️ No se pudo obtener cotización del Oracle:', error.message);
+        // Usar valores por defecto si falla el Oracle
+        cryptoAmount = amountARS * 0.001; // Rate aproximado
+        exchangeRate = 1000;
+      }
+
+      // 8. Guardar sesión en base de datos
       console.log('💾 Guardando pago con paymentId:', paymentId);
       console.log('💾 MerchantId:', merchantId);
       console.log('💾 Amount:', amountARS);
@@ -61,7 +81,11 @@ class MidatoPayService {
           amountARS,
           merchantAddress: merchant.walletAddress,
           merchantName: merchant.name,
-          concept
+          concept,
+          targetCrypto: 'USDT',
+          cryptoAmount,
+          exchangeRate,
+          sessionId: paymentId
         }
       };
       
@@ -87,11 +111,12 @@ class MidatoPayService {
         throw new Error('Merchant not found');
       }
 
-      // Por ahora usamos un wallet temporal (aquí entraría Cavos)
+      // Usar la wallet real del comercio si existe
       if (!merchant.walletAddress) {
-        merchant.walletAddress = `temp_wallet_${merchantId}`;
+        throw new Error('Merchant wallet not found. Please create a wallet first.');
       }
 
+      console.log('✅ Merchant wallet encontrada:', merchant.walletAddress);
       return merchant;
     } catch (error) {
       console.error('Error getting merchant:', error);
@@ -115,6 +140,9 @@ class MidatoPayService {
       const expirationTime = new Date();
       expirationTime.setMinutes(expirationTime.getMinutes() + 30);
 
+      // Generar QR único basado en paymentId y timestamp
+      const uniqueQRCode = `QR_${paymentId}_${Date.now()}`;
+      
       console.log('💾 Creando pago en BD con datos:', {
         paymentId,
         merchantId,
@@ -122,7 +150,7 @@ class MidatoPayService {
         concept: paymentData.concept || 'Pago QR',
         orderId: paymentId,
         status: 'PENDING',
-        qrCode: 'QR_SIMPLE',
+        qrCode: uniqueQRCode,
         expiresAt: expirationTime
       });
 
@@ -133,7 +161,7 @@ class MidatoPayService {
           concept: paymentData.concept || 'Pago QR', // Campo obligatorio del schema
           orderId: paymentId, // Usar paymentId como orderId
           status: 'PENDING', // Campo obligatorio del schema
-          qrCode: 'QR_SIMPLE', // Campo obligatorio del schema
+          qrCode: uniqueQRCode, // QR único para evitar conflictos
           expiresAt: expirationTime, // Campo obligatorio del schema
           userId: merchantId // Campo obligatorio del schema para la relación
         }
@@ -186,10 +214,93 @@ class MidatoPayService {
     };
   }
 
-  // Notificar comercio
-  async notifyMerchant(merchantId, notificationData) {
-    // TODO: Implementar notificaciones (WebSocket, email, SMS)
-    console.log(`📬 Notifying merchant ${merchantId}:`, notificationData);
+  // Llamar a la función pay del contrato de Starknet usando starkli
+  async callStarknetPayFunction(merchantAddress, amountARS, tokenAddress, paymentId) {
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    try {
+      // Construir el comando starkli con ruta completa
+      const contractAddress = '0x062161e7494635ec85e2f3e89bde170b433b8d4b07286c2754a9676fa32bbbb5';
+      const starkliPath = 'C:\\Users\\monst\\midatopay\\starknet-token\\starkli\\.starkli\\bin\\starkli.exe';
+      
+      // Convertir paymentId a formato hexadecimal válido para felt252
+      const paymentIdHex = '0x' + Buffer.from(paymentId, 'utf8').toString('hex');
+      
+      // Primero hacer un dry-run para verificar que el calldata es correcto
+      const dryRunCommand = `"${starkliPath}" call ${contractAddress} pay ${merchantAddress} u256:${amountARS} ${tokenAddress} ${paymentIdHex} --network sepolia`;
+      
+      console.log('🧪 Ejecutando dry-run para verificar calldata:', dryRunCommand);
+      
+      try {
+        const { stdout: dryRunStdout, stderr: dryRunStderr } = await execAsync(dryRunCommand, {
+          cwd: process.cwd(),
+          timeout: 30000 // 30 segundos para dry-run
+        });
+        
+        console.log('✅ Dry-run exitoso:', dryRunStdout);
+      } catch (dryRunError) {
+        console.warn('⚠️ Dry-run falló:', dryRunError.message);
+        console.log('📝 Continuando con invoke real...');
+      }
+
+      // Ahora ejecutar la transacción real
+      const command = `"${starkliPath}" invoke ${contractAddress} pay ${merchantAddress} u256:${amountARS} ${tokenAddress} ${paymentIdHex} --account C:\\Users\\monst\\midatopay\\starknet-token\\starkli\\.starkli\\accounts\\sepolia\\my.json --keystore C:\\Users\\monst\\midatopay\\starknet-token\\starkli\\.starkli\\keystores\\my_keystore.json --keystore-password vargaviella --network sepolia`;
+
+      console.log('🔧 Ejecutando comando starkli:', command);
+
+      // Ejecutar el comando con timeout más largo para transacciones blockchain
+      const { stdout, stderr } = await execAsync(command, {
+        cwd: process.cwd(),
+        timeout: 60000 // 60 segundos timeout para transacciones blockchain
+      });
+
+      if (stderr && !stderr.includes('Transaction accepted') && !stderr.includes('Invoke transaction:')) {
+        throw new Error(`Starkli error: ${stderr}`);
+      }
+
+      console.log('📊 Starkli output:', stdout);
+      console.log('📊 Starkli stderr:', stderr);
+      
+      // Buscar hash en stdout o stderr
+      const transactionHash = this.extractTransactionHash(stdout) || this.extractTransactionHash(stderr);
+      if (transactionHash) {
+        const explorerUrl = `https://sepolia.starkscan.co/tx/${transactionHash}`;
+        console.log('🔗 Hash de transacción:', transactionHash);
+        console.log('🌐 Starkscan URL:', explorerUrl);
+      }
+      
+      return {
+        success: true,
+        output: stdout,
+        transactionHash: transactionHash,
+        explorerUrl: transactionHash ? `https://sepolia.starkscan.co/tx/${transactionHash}` : null
+      };
+
+    } catch (error) {
+      console.error('❌ Error ejecutando starkli:', error.message);
+      throw new Error(`Error llamando función pay: ${error.message}`);
+    }
+  }
+
+  // Extraer hash de transacción del output de starkli
+  extractTransactionHash(output) {
+    // Buscar diferentes patrones de hash
+    const patterns = [
+      /Transaction hash: (0x[a-fA-F0-9]+)/,
+      /Invoke transaction: (0x[a-fA-F0-9]+)/,
+      /(0x[a-fA-F0-9]{64})/ // Hash de 64 caracteres hex
+    ];
+    
+    for (const pattern of patterns) {
+      const match = output.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+    
+    return null;
   }
 
   // Obtener historial de pagos del comercio
@@ -275,6 +386,49 @@ class MidatoPayService {
       if (payment.status !== 'PENDING') {
         throw new Error('El pago ya fue procesado');
       }
+
+      // 🚀 EJECUTAR STARKLI AQUÍ - Cuando se escanea el QR
+      console.log('🚀 QR escaneado - Ejecutando transacción en Starknet...');
+      let starkliResult = null;
+      try {
+        starkliResult = await this.callStarknetPayFunction(
+          merchantAddress,
+          amount,
+          '0x040898923d06af282d4a647966fc65c0f308020c43388026b56ef833eda0efdc', // USDT token address
+          paymentId
+        );
+        console.log('✅ Transacción Starknet ejecutada:', starkliResult);
+      } catch (error) {
+        console.warn('⚠️ Error ejecutando transacción Starknet:', error.message);
+        // Si hay un error pero se generó un hash, extraerlo del mensaje de error
+        if (error.message.includes('Invoke transaction:')) {
+          const hashMatch = error.message.match(/Invoke transaction: (0x[a-fA-F0-9]+)/);
+          if (hashMatch) {
+            starkliResult = {
+              success: true,
+              transactionHash: hashMatch[1],
+              explorerUrl: `https://sepolia.starkscan.co/tx/${hashMatch[1]}`
+            };
+            console.log('✅ Hash extraído del error:', starkliResult);
+          }
+        }
+      }
+
+      // 📝 ACTUALIZAR ESTADO DEL PAGO si la transacción fue exitosa
+      if (starkliResult && starkliResult.success) {
+        try {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: { 
+              status: 'COMPLETED',
+              updatedAt: new Date()
+            }
+          });
+          console.log('✅ Estado del pago actualizado a COMPLETED');
+        } catch (updateError) {
+          console.warn('⚠️ Error actualizando estado del pago:', updateError.message);
+        }
+      }
       
       return {
         success: true,
@@ -285,7 +439,13 @@ class MidatoPayService {
           merchantName: payment.user.name,
           concept: payment.concept,
           expiresAt: payment.expiresAt.toISOString(),
-          status: payment.status
+          status: (starkliResult && starkliResult.success) ? 'COMPLETED' : payment.status,
+          // Datos de la transacción blockchain
+          blockchainTransaction: starkliResult ? {
+            hash: starkliResult.transactionHash,
+            explorerUrl: starkliResult.explorerUrl,
+            success: starkliResult.success
+          } : null
         }
       };
     } catch (error) {
@@ -335,7 +495,7 @@ class MidatoPayService {
       console.log('🚀 Ejecutando swap ARS → Crypto con Oracle de blockchain...');
       
       const swapResult = await this.cavosService.executeARSToCryptoSwap({
-        merchantWalletAddress: payment.user.walletAddress || `temp_wallet_${payment.user.id}`,
+        merchantWalletAddress: payment.user.walletAddress,
         amountARS: arsPaymentData.amount,
         targetCrypto: arsPaymentData.targetCrypto || 'USDT',
         cryptoAmount: null, // El Oracle calculará esto
@@ -361,7 +521,8 @@ class MidatoPayService {
       // Crear transacción de crypto con datos del Oracle
       const transaction = await prisma.transaction.create({
         data: {
-          paymentId: payment.id,
+          paymentId: BigInt(Date.now()), // BigInt escalable para u256
+          paymentIdString: payment.id, // String para la relación con Payment
           amount: swapResult.cryptoAmount, // Del Oracle
           currency: arsPaymentData.targetCrypto || 'USDT',
           exchangeRate: swapResult.exchangeRate, // Del Oracle
@@ -369,7 +530,7 @@ class MidatoPayService {
           finalCurrency: 'ARS',
           status: 'CONFIRMED',
           blockchainTxHash: swapResult.transactionHash, // Hash real de Starknet
-          walletAddress: payment.user.walletAddress || `temp_wallet_${payment.user.id}`,
+          walletAddress: payment.user.walletAddress,
           userId: payment.userId,
           confirmationCount: 1,
           requiredConfirmations: 1

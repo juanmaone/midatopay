@@ -198,8 +198,39 @@ export default function QRScannerPage() {
 
       console.log('✅ Pago verificado:', result.data)
 
-      // Redirigir a la página de pago
-      router.push(`/pay/${paymentData.sessionId}`)
+      // Mostrar los datos de la transacción blockchain
+      if (result.data.paymentData.blockchainTransaction) {
+        const tx = result.data.paymentData.blockchainTransaction
+        toast.success(`¡Transacción ejecutada! Hash: ${tx.hash}`)
+        
+        // Redirigir a la página de resultados detallados
+        const params = new URLSearchParams({
+          paymentId: result.data.paymentData.paymentId,
+          merchantAddress: result.data.paymentData.merchantAddress,
+          amountARS: result.data.paymentData.amountARS.toString(),
+          merchantName: result.data.paymentData.merchantName,
+          concept: result.data.paymentData.concept,
+          status: result.data.paymentData.status,
+          txHash: tx.hash,
+          explorerUrl: tx.explorerUrl
+        })
+        
+        router.push(`/transaction-result?${params.toString()}`)
+      } else {
+        toast.success('QR escaneado exitosamente')
+        
+        // Redirigir sin datos de blockchain (transacción pendiente)
+        const params = new URLSearchParams({
+          paymentId: result.data.paymentData.paymentId,
+          merchantAddress: result.data.paymentData.merchantAddress,
+          amountARS: result.data.paymentData.amountARS.toString(),
+          merchantName: result.data.paymentData.merchantName,
+          concept: result.data.paymentData.concept,
+          status: result.data.paymentData.status
+        })
+        
+        router.push(`/transaction-result?${params.toString()}`)
+      }
       
     } catch (err) {
       console.error('Error procesando QR:', err)
@@ -209,16 +240,47 @@ export default function QRScannerPage() {
 
   const parseEMVQR = (qrData: string) => {
     try {
+      console.log('🔍 Parseando QR:', qrData)
+      
       // Parsear TLV data del QR EMVCo
-      // Por ahora, extraer sessionId del QR
-      const sessionMatch = qrData.match(/sess_[a-f0-9_]+/)
-      if (sessionMatch) {
-        return {
-          sessionId: sessionMatch[0],
-          qrData: qrData
-        }
+      // El QR contiene: 01650x[merchant_address]0205[amount]0326[payment_id]17C1
+      // Ejemplo: 01650x263314aecfb546ead2569e4793128c9337d9906e3eecdc42c4cbd2f68d6ccd30205100000326pay_1760486804327_8c33d6ca7B74
+      
+      // Extraer merchant address (65 caracteres después de 01650x)
+      const merchantMatch = qrData.match(/01650x([a-f0-9]{65})/)
+      if (!merchantMatch) {
+        console.warn('⚠️ No se encontró merchant address válido')
+        return null
       }
-      return null
+      
+      // Extraer amount (buscar 0205 seguido de números)
+      const amountMatch = qrData.match(/0205(\d+)/)
+      if (!amountMatch) {
+        console.warn('⚠️ No se encontró amount válido')
+        return null
+      }
+      
+      // Extraer paymentId (después del amount, buscar patrón pay_)
+      const afterAmount = qrData.substring(qrData.indexOf(amountMatch[1]) + amountMatch[1].length)
+      const paymentIdMatch = afterAmount.match(/pay_[a-zA-Z0-9_]+/)
+      if (!paymentIdMatch) {
+        console.warn('⚠️ No se encontró paymentId válido')
+        return null
+      }
+      
+      const merchantAddress = '0x' + merchantMatch[1]
+      const amount = parseInt(amountMatch[1])
+      const paymentId = paymentIdMatch[0] // Usar el match completo que incluye 'pay_'
+      
+      console.log('📱 QR parseado:', { merchantAddress, amount, paymentId })
+      
+      return {
+        merchantAddress,
+        amount,
+        paymentId,
+        qrData: qrData
+      }
+      
     } catch (err) {
       console.error('Error parseando EMV QR:', err)
       return null
@@ -226,8 +288,8 @@ export default function QRScannerPage() {
   }
 
   const simulateQRScan = () => {
-    // Simular escaneo de QR para testing
-    const mockQRData = 'sess_test_12345'
+    // Simular escaneo de QR para testing con formato TLV correcto
+    const mockQRData = '01650x263314aecfb546ead2569e4793128c9337d9906e3eecdc42c4cbd2f68d6ccd30205100000326pay_test_1234517C1'
     setScannedData(mockQRData)
     setIsScanning(false)
     processScannedQR(mockQRData)

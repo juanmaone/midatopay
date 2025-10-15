@@ -133,7 +133,7 @@ class EMVQRParser {
       // Extraer los 3 campos
       const result = {
         merchantAddress: parsed['01'],
-        amount: parseFloat(parsed['02']),
+        amount: parseInt(parsed['02']), // ✅ Usar parseInt para mantener enteros sin decimales
         paymentId: parsed['03']
       };
       

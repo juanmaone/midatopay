@@ -1,10 +1,10 @@
 // Hook para obtener balance USDT del merchant usando contrato real
 import { useState, useEffect } from 'react';
-import { starknetOracleService } from '@/services/starknetOracleService';
+import { starknetBalanceService } from '@/services/starknetOracleService';
 
 interface USDTBalance {
   balance: number;
-  balanceWei: string;
+  balanceRaw: bigint;
   address: string;
   isLoading: boolean;
   error: string | null;
@@ -13,7 +13,7 @@ interface USDTBalance {
 export function useUSDTBalance(merchantAddress?: string) {
   const [balanceData, setBalanceData] = useState<USDTBalance>({
     balance: 0,
-    balanceWei: '0',
+    balanceRaw: BigInt(0),
     address: '',
     isLoading: false,
     error: null
@@ -25,12 +25,12 @@ export function useUSDTBalance(merchantAddress?: string) {
     try {
       console.log('🔍 Consultando balance USDT para:', address);
       
-      const result = await starknetOracleService.getUSDTBalance(address);
+      const result = await starknetBalanceService.getUSDTBalance(address);
       
       if (result) {
         setBalanceData({
-          balance: result.balance,
-          balanceWei: result.balanceWei,
+          balance: Number(result.balance),
+          balanceRaw: result.balanceRaw,
           address: result.address,
           isLoading: false,
           error: null
@@ -57,7 +57,7 @@ export function useUSDTBalance(merchantAddress?: string) {
     } else {
       setBalanceData({
         balance: 0,
-        balanceWei: '0',
+        balanceRaw: BigInt(0),
         address: '',
         isLoading: false,
         error: null

@@ -24,34 +24,46 @@ async function getCurrentPrice(currency, baseCurrency = 'ARS') {
     // Usar 1 ARS como base para obtener el rate
     const quoteResult = await starknetOracle.getARSToUSDTQuote(1);
     
-    const oraclePrice = {
-      price: quoteResult.rate,
-      source: 'STARKNET_ORACLE',
-      timestamp: new Date(),
-      oracleAddress: starknetOracle.oracleAddress,
-      usdtAmount: quoteResult.usdtAmount,
-      rate: quoteResult.rate
-    };
-    
-    // Actualizar cache
-    priceCache.set(cacheKey, oraclePrice);
-    
-    // Guardar en base de datos
-    try {
-      await prisma.priceOracle.create({
-        data: {
-          currency,
-          baseCurrency,
-          price: oraclePrice.price,
-          source: oraclePrice.source
-        }
-      });
-    } catch (error) {
-      console.warn('Error guardando precio del Oracle en BD:', error.message);
+    // Solo guardar si el rate es válido (no 0, no Infinity, no NaN)
+    if (quoteResult.rate > 0 && isFinite(quoteResult.rate)) {
+      const oraclePrice = {
+        price: quoteResult.rate,
+        source: 'STARKNET_ORACLE',
+        timestamp: new Date(),
+        oracleAddress: starknetOracle.oracleAddress,
+        usdtAmount: quoteResult.usdtAmount,
+        rate: quoteResult.rate
+      };
+      
+      // Actualizar cache
+      priceCache.set(cacheKey, oraclePrice);
+      
+      // Guardar en base de datos
+      try {
+        await prisma.priceOracle.create({
+          data: {
+            currency,
+            baseCurrency,
+            price: oraclePrice.price,
+            source: oraclePrice.source
+          }
+        });
+        console.log(`✅ Precio USDT/ARS guardado en BD: $${oraclePrice.price}`);
+      } catch (error) {
+        console.warn('Error guardando precio del Oracle en BD:', error.message);
+      }
+      
+      console.log(`✅ Precio USDT/ARS obtenido del Oracle: $${oraclePrice.price}`);
+      return oraclePrice;
+    } else {
+      console.warn(`⚠️ Rate inválido del Oracle: ${quoteResult.rate}, no se guarda en BD`);
+      // Devolver un precio por defecto para evitar errores
+      return {
+        price: 1000, // Precio por defecto: 1 USDT = 1000 ARS
+        source: 'DEFAULT',
+        timestamp: new Date()
+      };
     }
-    
-    console.log(`✅ Precio USDT/ARS obtenido del Oracle: $${oraclePrice.price}`);
-    return oraclePrice;
   }
   
   // Para otras monedas, no soportadas - solo USDT/ARS
