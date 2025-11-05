@@ -18,6 +18,9 @@ const { startPriceOracle } = require('./services/priceOracle');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy (necesario cuando está detrás de Nginx/reverse proxy)
+app.set('trust proxy', true);
+
 // Middleware de seguridad
 app.use(helmet());
 app.use(cors({
