@@ -1,7 +1,10 @@
-FROM node:18-alpine
+FROM node:18-slim
 
-# Instalar OpenSSL para Prisma (necesario para libssl.so.1.1)
-RUN apk add --no-cache openssl1.1-compat
+# Instalar dependencias del sistema para Prisma y OpenSSL
+RUN apt-get update && \
+    apt-get install -y openssl libssl-dev passwd && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Establecer directorio de trabajo
 WORKDIR /app
@@ -38,8 +41,8 @@ RUN npm prune --production
 EXPOSE 3001
 
 # Usuario no-root por seguridad
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN groupadd -g 1001 nodejs && \
+    useradd -r -u 1001 -g nodejs nodejs
 
 # Cambiar ownership de los archivos ANTES de cambiar de usuario
 # Nota: Cambiar ownership después de copiar todo el código
