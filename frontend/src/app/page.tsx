@@ -145,7 +145,6 @@ export default function HomePage() {
         <ScrollVelocity
           velocity={3}
           className="flex items-center text-sm font-medium"
-          numCopies={4}
           parallaxClassName="parallax"
           scrollerClassName="scroller"
           scrollerStyle={{ display: 'inline-flex', alignItems: 'center', color: '#fff5f0' }}
