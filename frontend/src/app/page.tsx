@@ -16,6 +16,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import PixelBlast from '@/components/PixelBlast'
 import CustomHeader from '@/components/CustomHeader'
+import ScrollVelocity from '@/components/ScrollVelocity'
 
 export default function HomePage() {
   const [typewriterText, setTypewriterText] = useState('')
@@ -135,14 +136,47 @@ export default function HomePage() {
       </div>
       
       {/* Content */}
-      <div className="relative z-10 pt-16">
+      <div className="relative z-10 pt-24">
       {/* Custom Header */}
       <CustomHeader />
 
+      {/* Info Bar */}
+      <div className="absolute top-16 left-0 right-0 z-50 bg-black border-b border-gray-700 py-2 overflow-hidden">
+        <ScrollVelocity
+          velocity={3}
+          className="flex items-center text-sm font-medium"
+          numCopies={4}
+          parallaxClassName="parallax"
+          scrollerClassName="scroller"
+          scrollerStyle={{ display: 'inline-flex', alignItems: 'center', color: '#fff5f0' }}
+        >
+          {/* Secuencia completa con espacios incluidos */}
+          <div className="flex items-center" style={{ color: '#fff5f0' }}>
+            <span style={{ color: '#fff5f0' }}>Exclusive benefits</span>
+            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#fff5f0' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+            <div style={{ width: '6rem' }}></div>
+            <span style={{ color: '#fff5f0' }}>Instant conversion</span>
+            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#fff5f0' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <div style={{ width: '6rem' }}></div>
+            <span style={{ color: '#fff5f0' }}>Merchant support</span>
+            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#fff5f0' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
+            </svg>
+            <div style={{ width: '6rem' }}></div>
+          </div>
+        </ScrollVelocity>
+      </div>
+
       {/* Hero Section */}
-      <section className="py-2 px-6">
+      <section className="py-16 px-6" style={{ 
+        background: 'linear-gradient(180deg, rgba(255, 106, 0, 0.4) 0%, rgba(255, 106, 0, 0.1) 40%, rgba(255, 255, 255, 1) 50%)' 
+      }}>
         <div className="container mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Side - Content */}
             <div className="text-left">
               <motion.div
@@ -154,7 +188,7 @@ export default function HomePage() {
                 </div>
                 
                 <h1 
-                  className="text-4xl md:text-[85px] font-bold mb-4 leading-[0.95]" 
+                  className="text-4xl md:text-[75px] font-bold mb-4 leading-[0.95]" 
                   style={{ 
                     fontFamily: 'Kufam, sans-serif', 
                     color: '#2C2C2C'
@@ -170,7 +204,7 @@ export default function HomePage() {
                 </h1>
                 
                   <p 
-                  className="text-3xl mb-6 leading-[1.2]" 
+                  className="text-2xl md:text-3xl mb-14 leading-[1.2]" 
                     style={{ 
                     fontFamily: 'Kufam, sans-serif', 
                     color: '#FF6A00',
@@ -180,17 +214,8 @@ export default function HomePage() {
                   Protect the value of your sales <br />without changing how you collect.
                 </p>
                 
-                <div className="flex flex-col items-start mb-6">
-                  <Button size="lg" className="text-lg px-8 py-5 text-white mb-2 rounded-xl" style={{ backgroundColor: '#FF6A00', fontFamily: 'Kufam, sans-serif' }} asChild>
-                    <Link href="/auth/register">
-                      Get Started
-                      <ArrowRight className="ml-2 w-5 h-5" />
-                    </Link>
-                  </Button>
-                </div>
-
                 {/* Crypto Badges */}
-                <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-4 flex-wrap mb-10">
                   <span className="text-lg font-semibold" style={{ fontFamily: 'Kufam, sans-serif', color: '#2C2C2C' }}>Collect:</span>
                   <div className="flex items-center gap-3">
                     {/* ARS Badge */}
@@ -278,22 +303,31 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
+                
+                <div className="flex flex-col items-start mb-6">
+                  <Button size="lg" className="text-lg px-8 py-5 text-white mb-2 rounded-xl" style={{ backgroundColor: '#FF6A00', fontFamily: 'Kufam, sans-serif' }} asChild>
+                    <Link href="/auth/register">
+                      Get Started
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Link>
+                  </Button>
+                </div>
               </motion.div>
                 </div>
 
             {/* Right Side - Character */}
-            <div className="flex justify-center lg:justify-end items-end">
-                          <motion.div
+            <div className="flex justify-center items-start pt-2">
+              <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="relative flex items-end"
+                className="relative flex items-start justify-center"
               >
                 <Image 
-                  src="/personaje2-scan.png" 
-                  alt="Asistente MidatoPay" 
-                  width={600} 
-                  height={750} 
+                  src="/gato.svg" 
+                  alt="MidatoPay Cat" 
+                  width={300} 
+                  height={100} 
                   className="drop-shadow-2xl"
                   style={{ filter: 'drop-shadow(0 25px 50px rgba(0, 0, 0, 0.15))' }}
                 />

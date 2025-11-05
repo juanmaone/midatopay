@@ -14,16 +14,18 @@ const api = axios.create({
 // Interceptor para agregar token de autenticación
 api.interceptors.request.use(
   (config) => {
-    const authData = localStorage.getItem('auth-storage')
-    if (authData) {
-      try {
-        const parsed = JSON.parse(authData)
-        const token = parsed.state?.token
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`
+    if (typeof window !== 'undefined') {
+      const authData = localStorage.getItem('auth-storage')
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData)
+          const token = parsed.state?.token
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+          }
+        } catch (error) {
+          console.error('Error parsing auth data:', error)
         }
-      } catch (error) {
-        console.error('Error parsing auth data:', error)
       }
     }
     return config
@@ -41,8 +43,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expirado o inválido
-      localStorage.removeItem('auth-storage')
-      window.location.href = '/auth/login'
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth-storage')
+        window.location.href = '/auth/login'
+      }
     }
     return Promise.reject(error)
   }

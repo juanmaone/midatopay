@@ -127,6 +127,21 @@
   .payment-option.selected {
     @apply border-orange-500 bg-orange-50;
   }
+
+  /* Animación para la barra de información (loop continuo sin salto) */
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(calc(-50% - 3rem));
+    }
+  }
+
+  .animate-scroll {
+    animation: scroll 20s linear infinite;
+    will-change: transform;
+  }
   
   .status-badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;

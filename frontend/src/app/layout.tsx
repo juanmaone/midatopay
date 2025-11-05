@@ -7,6 +7,7 @@ import { AuthProvider } from '@/components/providers/AuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'MidatoPay - Pagos con Criptomonedas',
   description: 'Sistema de pagos que permite a comercios recibir pagos en criptomonedas y convertirlos automáticamente a pesos argentinos.',
   keywords: ['pagos', 'criptomonedas', 'USDT', 'Bitcoin', 'Ethereum', 'Argentina', 'ARS'],

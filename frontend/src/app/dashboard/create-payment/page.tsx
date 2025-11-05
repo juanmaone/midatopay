@@ -78,8 +78,11 @@ export default function CreatePaymentPage() {
     }
   }
 
-  if (!isAuthenticated) {
-    router.push('/auth/login')
+  // Evitar render en servidor si no está autenticado
+  if (typeof window === 'undefined' || !isAuthenticated) {
+    if (typeof window !== 'undefined') {
+      router.push('/auth/login')
+    }
     return null
   }
 
