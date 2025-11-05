@@ -19,6 +19,7 @@ export interface UseWalletManagerReturn {
   clearError: () => void;
   exportWallet: () => string | null;
   importWallet: (jsonData: string) => boolean;
+  clearCorruptedWallets: () => void;
 }
 
 export function useWalletManager(): UseWalletManagerReturn {
