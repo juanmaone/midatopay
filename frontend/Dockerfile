@@ -25,7 +25,7 @@ COPY . .
 RUN npm run build
 
 # Limpiar devDependencies después del build
-RUN npm prune --production
+RUN npm prune --production --legacy-peer-deps
 
 # ============================================
 # Configurar usuario no-root por seguridad
