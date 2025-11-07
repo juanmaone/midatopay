@@ -341,18 +341,23 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="relative rounded-2xl p-6 shadow-xl"
+              className="relative rounded-2xl p-6 shadow-xl flex flex-col"
               style={{ backgroundColor: '#FF6A00' }}
             >
-              <div className="text-white">
-                <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  {t.homepage.promoCards.startBeating.title1}
-                </h3>
-                <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  {t.homepage.promoCards.startBeating.title2}
-                </h3>
+              <div className="text-white flex flex-col flex-grow">
+                <div className="flex-grow">
+                  <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.startBeating.title1}
+                  </h3>
+                  <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.startBeating.title2}
+                  </h3>
+                  <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.startBeating.title3}
+                  </h3>
+                </div>
                 
-                <button className="bg-white text-orange-600 px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-50 transition-colors text-sm">
+                <button className="bg-white text-orange-600 px-3 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-sm w-[130px]">
                   {t.homepage.promoCards.startBeating.button}
                   <ArrowRight className="w-3 h-3" />
                 </button>
@@ -369,21 +374,23 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative rounded-2xl p-6 shadow-xl"
+              className="relative rounded-2xl p-6 shadow-xl flex flex-col"
               style={{ backgroundColor: '#2C2C2C' }}
             >
-              <div className="text-white">
-                <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  {t.homepage.promoCards.interoperableQR.title1}
-                </h3>
-                <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  {t.homepage.promoCards.interoperableQR.title2}
-                </h3>
-                <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  {t.homepage.promoCards.interoperableQR.title3}
-                </h3>
+              <div className="text-white flex flex-col flex-grow">
+                <div className="flex-grow">
+                  <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.interoperableQR.title1}
+                  </h3>
+                  <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.interoperableQR.title2}
+                  </h3>
+                  <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.interoperableQR.title3}
+                  </h3>
+                </div>
                 
-                <button className="bg-orange-500 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:bg-orange-600 transition-colors text-sm">
+                <button className="bg-orange-500 text-white px-3 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors text-sm w-[130px]">
                   {t.homepage.promoCards.interoperableQR.button}
                   <ArrowRight className="w-3 h-3" />
                 </button>
@@ -400,24 +407,26 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="relative rounded-2xl p-6 shadow-xl border-2"
+              className="relative rounded-2xl p-6 shadow-xl border-2 flex flex-col"
               style={{ 
                 backgroundColor: '#FFF9F5',
                 borderColor: '#FF6A00'
               }}
             >
-              <div className="text-orange-600">
-                <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  {t.homepage.promoCards.merchants.title1}
-                </h3>
-                <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  {t.homepage.promoCards.merchants.title2}
-                </h3>
-                <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  {t.homepage.promoCards.merchants.title3}
-                </h3>
+              <div className="text-orange-600 flex flex-col flex-grow">
+                <div className="flex-grow">
+                  <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.merchants.title1}
+                  </h3>
+                  <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.merchants.title2}
+                  </h3>
+                  <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
+                    {t.homepage.promoCards.merchants.title3}
+                  </h3>
+                </div>
                 
-                <button className="bg-gradient-to-r from-orange-500 to-orange-400 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:from-orange-600 hover:to-orange-500 transition-colors text-sm">
+                <button className="bg-gradient-to-r from-orange-500 to-orange-400 text-white px-3 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-orange-600 hover:to-orange-500 transition-colors text-sm w-[130px]">
                   {t.homepage.promoCards.merchants.button}
                   <ArrowRight className="w-3 h-3" />
                 </button>

@@ -2,7 +2,7 @@
   "header": {
     "home": "Home",
     "joinWaitlist": "Unisciti alla Lista",
-    "learn": "Impara",
+    "news": "Notizie",
     "login": "Accedi",
     "signUp": "Registrati"
   },
@@ -36,8 +36,9 @@
     },
     "promoCards": {
       "startBeating": {
-        "title1": "Inizia a battere",
-        "title2": "l'inflazione",
+        "title1": "Inizia",
+        "title2": "a battere",
+        "title3": "l'inflazione",
         "button": "Inizia"
       },
       "interoperableQR": {
@@ -220,6 +221,34 @@
         "registering": "Errore durante la registrazione"
       },
       "socialRegister": "Registrazione con {provider} disponibile a breve con Cavos Aegis"
+    }
+  },
+  "news": {
+    "title": "Notizie",
+    "subtitle": "Ultimi aggiornamenti e notizie da MidatoPay",
+    "readMore": "Leggi di più",
+    "backToNews": "Torna alle Notizie",
+    "articles": {
+      "hackathon": {
+        "title": "MidatoPay vince Hackathon e avanza alla Fase Seed presso Startup House di Starknet",
+        "date": "5 Novembre - 2025",
+        "excerpt": "Siamo entusiasti di annunciare che MidatoPay ha vinto il 3° posto in un hackathon ed è stato selezionato per partecipare alla Fase Seed del programma Startup House di Starknet a Buenos Aires, Argentina.",
+        "content": "Siamo felici di condividere una grande notizia! MidatoPay ha vinto il 3° posto nell'Hackathon di Starknet tra più di 1.400 progetti da tutto il mondo ed è stato selezionato per partecipare alla Fase Seed del programma Startup House di Starknet a Buenos Aires, Argentina.\n\nQuesto riconoscimento ci riempie di orgoglio e ci spinge a continuare a costruire una soluzione reale per pagamenti interoperabili tra fiat e cripto per i commercianti di LATAM.\n\nLa vittoria nell'hackathon convalida la nostra visione di proteggere i commercianti dall'inflazione attraverso soluzioni blockchain.\n\nRingraziamo enormemente **Cavos**, **Starknet Foundation** e **Crecimiento Argentina** per il supporto, la fiducia e l'energia che ci hanno accompagnato durante tutto il processo.\n\nDal 12 al 16 novembre 2025, il nostro team parteciperà allo Startup House di Buenos Aires, un programma intensivo di 5 giorni progettato per scalare progetti da MVP a startup consolidate. Questo programma ci fornirà:\n\n• Architettura tecnologica migliorata\n• Un piano go-to-market personalizzato per il nostro prodotto\n• Strategia di acquisizione dei primi clienti\n• Chiara roadmap di crescita a 90 giorni con supporto di follow-up\n• Nuove connessioni con mentori e sviluppatori di Starknet\n\nIl programma include alloggio gratuito, pasti, mentorship e workshop specializzati. Siamo impegnati a sfruttare questa opportunità unica per accelerare lo sviluppo della nostra piattaforma e portare MidatoPay al livello successivo.\n\nResta sintonizzato per ulteriori aggiornamenti mentre continuiamo a costruire il futuro dei pagamenti per i commercianti.",
+        "videoSection": {
+          "title": "Annuncio ufficiale dell'hackathon",
+          "description": "Puoi vedere il momento esatto in cui MidatoPay è stato annunciato come vincitore del 3° posto nell'hackathon:",
+          "notSupported": "Il tuo browser non supporta la riproduzione di video."
+        },
+        "socialMedia": {
+          "title": "Pubblicazioni sui nostri social"
+        }
+      },
+      "startupHouse": {
+        "title": "MidatoPay parteciperà allo Startup House di Starknet a Buenos Aires",
+        "date": "12 Novembre - 2025",
+        "excerpt": "Il nostro team si sta preparando per partecipare al programma Startup House di Starknet a Buenos Aires, un programma intensivo di 5 giorni progettato per scalare progetti da MVP a startup consolidate.",
+        "content": "Siamo entusiasti di condividere maggiori dettagli sul programma Startup House di Starknet a cui parteciperemo dal 12 al 16 novembre 2025 a Buenos Aires, Argentina.\n\nLo Startup House è un programma progettato per team che stanno costruendo su Starknet e che hanno già un MVP in funzione. Il programma offre supporto pratico da costruttori e mentori esperti nel corso di diversi giorni per creare un business di successo guidato dagli utenti.\n\nQuesto programma è progettato per scalare il tuo progetto da MVP a startup consolidata, affinare le tue strategie con mentori esperti e creare opportunità di networking con investitori e VC.\n\nBenefici del programma:\n\n• Architettura tecnologica migliorata\n• Un piano go-to-market personalizzato per il tuo prodotto\n• Strategia di acquisizione dei primi clienti\n• Chiara roadmap di crescita a 90 giorni con follow-up e supporto\n• Nuove connessioni con mentori e sviluppatori di Starknet\n\nInformazioni sull'evento di Buenos Aires:\n\n• Ubicazione: Buenos Aires, Argentina\n• Date: 12-16 novembre 2025\n• Focus: Approfondimento sul perfezionamento tecnico e scalabilità del business per il tuo MVP di Starknet\n• Include: Alloggio gratuito, pasti, mentorship e workshop\n\nSiamo orgogliosi di far parte di questo programma e non vediamo l'ora di condividere i nostri apprendimenti e progressi con la nostra community."
+      }
     }
   }
 }

@@ -73,11 +73,11 @@ export default function CustomHeader() {
               {t.header.joinWaitlist}
             </Link>
             <Link 
-              href="/aprende" 
+              href="/noticias" 
               className="text-sm xl:text-base font-medium transition-all duration-300 hover:text-white hover:scale-105 whitespace-nowrap"
               style={{ fontFamily: 'Kufam, sans-serif', color: '#FFFFFF' }}
             >
-              {t.header.learn}
+              {t.header.news}
             </Link>
           </div>
 
@@ -150,12 +150,12 @@ export default function CustomHeader() {
                 {t.header.joinWaitlist}
               </Link>
               <Link 
-                href="/aprende" 
+                href="/noticias" 
                 className="text-base font-medium transition-all duration-300 hover:text-white hover:scale-105"
                 style={{ fontFamily: 'Kufam, sans-serif', color: '#FFFFFF' }}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {t.header.learn}
+                {t.header.news}
               </Link>
               
               {/* Selector de idioma con mejor espaciado */}

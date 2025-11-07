@@ -2,7 +2,7 @@
   "header": {
     "home": "Home",
     "joinWaitlist": "Join Waitlist",
-    "learn": "Learn",
+    "news": "News",
     "login": "Login",
     "signUp": "Sign Up"
   },
@@ -36,8 +36,9 @@
     },
     "promoCards": {
       "startBeating": {
-        "title1": "Start beating",
-        "title2": "inflation",
+        "title1": "Start",
+        "title2": "beating",
+        "title3": "inflation",
         "button": "Start"
       },
       "interoperableQR": {
@@ -220,6 +221,34 @@
         "registering": "Error registering"
       },
       "socialRegister": "Registration with {provider} coming soon with Cavos Aegis"
+    }
+  },
+  "news": {
+    "title": "News",
+    "subtitle": "Latest updates and news from MidatoPay",
+    "readMore": "Read more",
+    "backToNews": "Back to News",
+    "articles": {
+      "hackathon": {
+        "title": "MidatoPay Wins Hackathon and Advances to Seed Phase at Starknet Startup House",
+        "date": "November 5 - 2025",
+        "excerpt": "We are excited to announce that MidatoPay has won 3rd place in a hackathon and has been selected to participate in the Seed Phase of Starknet's Startup House program in Buenos Aires, Argentina.",
+        "content": "We are happy to share great news! MidatoPay won 3rd place in the Starknet Hackathon among more than 1,400 projects from around the world and has been selected to participate in the Seed Phase of Starknet's Startup House program in Buenos Aires, Argentina.\n\nThis recognition fills us with pride and drives us to continue building a real solution for interoperable payments between fiat and crypto for LATAM merchants.\n\nThe hackathon victory validates our vision of protecting merchants from inflation through blockchain solutions.\n\nWe greatly thank **Cavos**, **Starknet Foundation**, and **Crecimiento Argentina** for the support, trust, and energy that accompanied us throughout the process.\n\nFrom November 12-16, 2025, our team will participate in the Buenos Aires Startup House, an intensive 5-day program designed to scale projects from MVP to established startups. This program will provide us with:\n\n• Upgraded tech architecture\n• A go-to-market plan tailored to our product\n• First customer acquisition strategy\n• Clear 90-day growth roadmap with follow-up support\n• New connections with mentors and Starknet builders\n\nThe program includes free accommodation, meals, mentorship, and specialized workshops. We are committed to leveraging this unique opportunity to accelerate the development of our platform and take MidatoPay to the next level.\n\nStay tuned for more updates as we continue building the future of payments for merchants.",
+        "videoSection": {
+          "title": "Official hackathon announcement",
+          "description": "You can watch the exact moment when MidatoPay was announced as the 3rd place winner in the hackathon:",
+          "notSupported": "Your browser does not support video playback."
+        },
+        "socialMedia": {
+          "title": "Posts on our social media"
+        }
+      },
+      "startupHouse": {
+        "title": "MidatoPay to Participate in Starknet Startup House in Buenos Aires",
+        "date": "November 12 - 2025",
+        "excerpt": "Our team is preparing to participate in Starknet's Startup House program in Buenos Aires, an intensive 5-day program designed to scale projects from MVP to established startups.",
+        "content": "We are excited to share more details about the Starknet Startup House program we will be participating in from November 12-16, 2025 in Buenos Aires, Argentina.\n\nThe Startup House is a program designed for teams building on Starknet who already have a live MVP. The program offers hands-on support from experienced builders and mentors over the course of multiple days to create a successful, user-driven business.\n\nThis program is designed to scale your project from MVP to established startup, sharpen your strategies with expert mentors, and create networking opportunities with investors and VCs.\n\nProgram benefits:\n\n• Upgraded tech architecture\n• A go-to-market plan tailored to your product\n• First customer acquisition strategy\n• Clear 90-day growth roadmap with follow-up support\n• New connections with mentors and Starknet builders\n\nBuenos Aires event information:\n\n• Location: Buenos Aires, Argentina\n• Dates: November 12-16, 2025\n• Focus: Deep dive into tech refinement & business scaling for your Starknet MVP\n• Includes: Free accommodation, meals, mentorship, workshops\n\nWe are proud to be part of this program and look forward to sharing our learnings and progress with our community."
+      }
     }
   }
 }
