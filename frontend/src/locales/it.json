@@ -1,0 +1,226 @@
+{
+  "header": {
+    "home": "Home",
+    "joinWaitlist": "Unisciti alla Lista",
+    "learn": "Impara",
+    "login": "Accedi",
+    "signUp": "Registrati"
+  },
+  "homepage": {
+    "hero": {
+      "title": "La tua attività,",
+      "titleImmune": "immune a",
+      "subtitle": "Proteggi il valore delle tue vendite senza cambiare come riscuoti.",
+      "collect": "Riscuoti:",
+      "receive": "Ricevi:"
+    },
+    "infoBar": {
+      "exclusiveBenefits": "Benefici esclusivi",
+      "instantConversion": "Conversione istantanea",
+      "merchantSupport": "Supporto commercianti"
+    },
+    "features": {
+      "title": "Perché scegliere MidatoPay?",
+      "startBeating": {
+        "title": "Inizia a battere",
+        "description": "Proteggi i tuoi guadagni dall'inflazione con conversione automatica in criptovalute."
+      },
+      "simpleIntegration": {
+        "title": "Integrazione semplice",
+        "description": "Nessuna modifica al tuo flusso di lavoro. Basta generare un QR e ricevere pagamenti."
+      },
+      "instantPayments": {
+        "title": "Pagamenti istantanei",
+        "description": "Ricevi pagamenti in tempo reale con conferme rapide sulla blockchain."
+      }
+    },
+    "promoCards": {
+      "startBeating": {
+        "title1": "Inizia a battere",
+        "title2": "l'inflazione",
+        "button": "Inizia"
+      },
+      "interoperableQR": {
+        "title1": "QR Interoperabile:",
+        "title2": "accetta qualsiasi",
+        "title3": "wallet",
+        "button": "Scopri di più"
+      },
+      "merchants": {
+        "title1": "+50 Commercianti",
+        "title2": "scelgono",
+        "title3": "MidatoPay",
+        "button": "Unisciti"
+      }
+    },
+    "howItWorks": {
+      "title": "Come funziona MidatoPay",
+      "subtitle": "Un processo semplice e sicuro per proteggere le tue vendite dall'inflazione",
+      "description": {
+        "line1": "Un ciclo dinamico",
+        "line2": "iterativo focalizzato su",
+        "line3": "semplicità,",
+        "line4": "personalizzazione",
+        "line5": "e fiducia dell'utente."
+      },
+      "step1": {
+        "title": "Genera QR",
+        "description": "Il commerciante crea un QR con l'importo in pesos argentini e la criptovaluta desiderata"
+      },
+      "step2": {
+        "title": "Cliente Scansiona",
+        "description": "Il cliente scansiona il QR con il telefono e vede i dettagli del pagamento"
+      },
+      "step3": {
+        "title": "Pagamento in ARS",
+        "description": "Il cliente paga in pesos argentini usando il metodo preferito"
+      },
+      "step4": {
+        "title": "Conversione Automatica",
+        "description": "MidatoPay converte automaticamente i pesos in criptovalute"
+      }
+    },
+    "cta": {
+      "title": "Pronto a proteggere le tue vendite?",
+      "description": "Unisciti ai commercianti che stanno già proteggendo i loro guadagni dall'inflazione.",
+      "button": "Inizia Ora"
+    },
+    "footer": {
+      "description": "Proteggi le tue vendite dall'inflazione con pagamenti in criptovalute. Conversione automatica e sicurezza blockchain per la tua attività.",
+      "product": "Prodotto",
+      "support": "Supporto",
+      "howItWorks": "Come funziona",
+      "pricing": "Prezzi",
+      "security": "Sicurezza",
+      "api": "API",
+      "helpCenter": "Centro Assistenza",
+      "contact": "Contatto",
+      "documentation": "Documentazione",
+      "systemStatus": "Stato del Sistema",
+      "copyright": "© 2024 MidatoPay. Tutti i diritti riservati.",
+      "privacy": "Politica sulla Privacy",
+      "terms": "Termini di Servizio",
+      "cookies": "Cookie"
+    },
+    "problems": {
+      "title": "Problemi",
+      "subtitle": "Esploriamo le aspettative e i problemi potenziali dei commercianti per semplificare la loro esperienza.",
+      "problem1": {
+        "title": "Perdita di valore per inflazione",
+        "description": "I commercianti vedono come le loro vendite in pesos argentini perdono valore giorno per giorno a causa dell'inflazione. Non capiscono come proteggere i loro guadagni senza cambiare il modo in cui riscuotono."
+      },
+      "problem2": {
+        "title": "Complessità tecnica non necessaria",
+        "description": "I clienti arrivano al negozio e non riescono a capire come pagare con criptovalute. Tutto sembra complicato, hanno bisogno di wallet, conoscenze tecniche e finiscono per abbandonare l'acquisto."
+      }
+    }
+  },
+  "typewriter": {
+    "words": ["inflazione", "svalutazione", "crisi"]
+  },
+  "waitlist": {
+    "title": "MidatoPay",
+    "subtitle": "La soluzione dei commercianti per proteggersi dall'",
+    "inflation": "Inflazione",
+    "description": "Il primo portafoglio per commercianti che consente di riscuotere con QR interoperabile e ricevere pagamenti direttamente in criptovalute. Proteggi la tua attività dall'inflazione facilitando transazioni moderne e sicure.",
+    "features": {
+      "protection": "Protezione dall'inflazione",
+      "instant": "Transazioni istantanee",
+      "crypto": "Pagamenti in cripto",
+      "qr": "QR Interoperabile"
+    },
+    "ctaButton": "Unisciti alla Lista",
+    "waitlistTitle": "Lista d'Attesa",
+    "question": "Qual è la tua fatturazione mensile?",
+    "billingOptions": {
+      "lessThan1000": "Meno di USD1,000",
+      "1000to5000": "USD1,000 - USD5,000",
+      "5000to10000": "USD5,000 - USD10,000",
+      "10000to50000": "USD10,000 - USD50,000",
+      "50000to100000": "USD50,000 - USD100,000",
+      "moreThan100000": "Più di USD100,000"
+    },
+    "votes": "voti",
+    "priority": "Ottieni accesso prioritario ed esclusivo",
+    "modal": {
+      "title": "Lista d'Attesa",
+      "question": "Qual è la tua fatturazione mensile?",
+      "youSelected": "Hai selezionato:",
+      "emailPlaceholder": "tuo@email.com",
+      "subscribe": "Iscriviti",
+      "subscribing": "Iscrizione in corso...",
+      "priorityText": "Ottieni accesso prioritario ed esclusivo"
+    },
+    "success": {
+      "title": "Ti sei iscritto con successo!",
+      "message": "Ti notificheremo quando MidatoPay sarà disponibile.",
+      "close": "Chiudi"
+    },
+    "errors": {
+      "joinError": "Errore nell'iscrizione alla lista d'attesa",
+      "connectionError": "Errore di connessione. Per favore riprova."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Ciao!",
+      "backToHome": "Torna alla home",
+      "email": "Email",
+      "emailPlaceholder": "Inserisci la tua email",
+      "continue": "Continua",
+      "password": "Password",
+      "passwordPlaceholder": "Inserisci la tua password",
+      "forgotPassword": "Hai dimenticato la password?",
+      "rememberMe": "Ricordami",
+      "signIn": "Accedi",
+      "signingIn": "Accesso in corso...",
+      "orContinueWith": "O continua con",
+      "google": "Google",
+      "dontHaveAccount": "Non hai un account?",
+      "signUp": "Registrati",
+      "change": "Cambia",
+      "welcome": "Benvenuto su MidatoPay!",
+      "errors": {
+        "invalidEmail": "Inserisci un'email valida",
+        "loggingIn": "Errore durante l'accesso",
+        "passwordMin": "La password deve contenere almeno 6 caratteri"
+      },
+      "socialLogin": "Accesso con {provider} disponibile a breve con Cavos Aegis"
+    },
+    "register": {
+      "title": "Crea Account",
+      "backToHome": "Torna alla home",
+      "fullName": "Nome completo",
+      "fullNamePlaceholder": "Il tuo nome completo",
+      "email": "Email",
+      "emailPlaceholder": "tua@email.com",
+      "password": "Password",
+      "passwordPlaceholder": "Minimo 6 caratteri",
+      "confirmPassword": "Conferma password",
+      "confirmPasswordPlaceholder": "Ripeti la tua password",
+      "orSignUpWith": "o registrati con",
+      "continueWithGoogle": "Continua con Google",
+      "continueWithApple": "Continua con Apple",
+      "change": "Cambia",
+      "name": "Nome",
+      "acceptTerms": "Accetto i",
+      "termsAndConditions": "termini e condizioni",
+      "andThe": "e la",
+      "privacyPolicy": "politica sulla privacy",
+      "createAccount": "Crea Account",
+      "creatingAccount": "Creazione account...",
+      "alreadyHaveAccount": "Hai già un account?",
+      "loginHere": "Accedi qui",
+      "accountCreated": "Account creato con successo!",
+      "errors": {
+        "nameMin": "Il nome deve contenere almeno 2 caratteri",
+        "invalidEmail": "Inserisci un'email valida",
+        "passwordMin": "La password deve contenere almeno 6 caratteri",
+        "passwordsDontMatch": "Le password non corrispondono",
+        "registering": "Errore durante la registrazione"
+      },
+      "socialRegister": "Registrazione con {provider} disponibile a breve con Cavos Aegis"
+    }
+  }
+}
+

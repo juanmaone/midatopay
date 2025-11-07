@@ -16,17 +16,30 @@ import Image from 'next/image'
 import Link from 'next/link'
 import CustomHeader from '@/components/CustomHeader'
 import ScrollVelocity from '@/components/ScrollVelocity'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export default function HomePage() {
+  const { t, language } = useLanguage()
   const [typewriterText, setTypewriterText] = useState('')
   
-  const words = ['inflation', 'devaluation', 'crisis']
+  const words = t.typewriter.words
   const typewriterRef = useRef({
     currentWordIndex: 0,
     charIndex: 0,
     isDeleting: false,
     waitCount: 0
   })
+
+  // Reset typewriter cuando cambia el idioma
+  useEffect(() => {
+    setTypewriterText('')
+    typewriterRef.current = {
+      currentWordIndex: 0,
+      charIndex: 0,
+      isDeleting: false,
+      waitCount: 0
+    }
+  }, [language])
 
   // Typewriter effect
   useEffect(() => {
@@ -61,14 +74,14 @@ export default function HomePage() {
     }, 100)
     
     return () => clearInterval(typeInterval)
-  }, [])
+  }, [words])
 
   // Datos del proceso estático
   const processSteps = [
     {
       id: 0,
-      title: "Generar QR",
-      description: "El comerciante crea un QR con el monto en pesos argentinos y la criptomoneda deseada",
+      title: t.homepage.howItWorks.step1.title,
+      description: t.homepage.howItWorks.step1.description,
       icon: (
         <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -77,8 +90,8 @@ export default function HomePage() {
     },
     {
       id: 1,
-      title: "Cliente Escanea",
-      description: "El cliente escanea el QR con su celular y ve los detalles del pago",
+      title: t.homepage.howItWorks.step2.title,
+      description: t.homepage.howItWorks.step2.description,
       icon: (
         <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -87,8 +100,8 @@ export default function HomePage() {
     },
     {
       id: 2,
-      title: "Pago en ARS",
-      description: "El cliente paga en pesos argentinos usando su método preferido",
+      title: t.homepage.howItWorks.step3.title,
+      description: t.homepage.howItWorks.step3.description,
       icon: (
         <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -97,8 +110,8 @@ export default function HomePage() {
     },
     {
       id: 3,
-      title: "Conversión Automática",
-      description: "MidatoPay convierte automáticamente los pesos a criptomonedas",
+      title: t.homepage.howItWorks.step4.title,
+      description: t.homepage.howItWorks.step4.description,
       icon: (
         <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -125,17 +138,17 @@ export default function HomePage() {
         >
           {/* Secuencia completa con espacios incluidos */}
           <div className="flex items-center h-full" style={{ color: '#fff5f0' }}>
-            <span className="whitespace-nowrap" style={{ color: '#fff5f0' }}>Exclusive benefits</span>
+            <span className="whitespace-nowrap" style={{ color: '#fff5f0' }}>{t.homepage.infoBar.exclusiveBenefits}</span>
             <svg className="w-3 h-3 sm:w-4 sm:h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#fff5f0' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
             </svg>
             <div className="w-4 sm:w-6 md:w-24"></div>
-            <span className="whitespace-nowrap" style={{ color: '#fff5f0' }}>Instant conversion</span>
+            <span className="whitespace-nowrap" style={{ color: '#fff5f0' }}>{t.homepage.infoBar.instantConversion}</span>
             <svg className="w-3 h-3 sm:w-4 sm:h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#fff5f0' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             <div className="w-4 sm:w-6 md:w-24"></div>
-            <span className="whitespace-nowrap" style={{ color: '#fff5f0' }}>Merchant support</span>
+            <span className="whitespace-nowrap" style={{ color: '#fff5f0' }}>{t.homepage.infoBar.merchantSupport}</span>
             <svg className="w-3 h-3 sm:w-4 sm:h-4 ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#fff5f0' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
             </svg>
@@ -170,9 +183,9 @@ export default function HomePage() {
                     color: '#2C2C2C'
                   }}
                 >
-                  Your business,
+                  {t.homepage.hero.title}
                   <br />
-                  immune to <br />
+                  {t.homepage.hero.titleImmune} <br />
                   <span style={{ color: '#FF6A00' }}>
                     {typewriterText}
                     <span className="animate-pulse">|</span>
@@ -187,14 +200,14 @@ export default function HomePage() {
                     fontWeight: 500
                   }}
                 >
-                  Protect the value of your sales <br className="hidden sm:block" />without changing how you collect.
+                  {t.homepage.hero.subtitle}
                 </p>
                 
                 {/* Crypto Badges */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4 mb-8 sm:mb-10">
                   {/* Collect Section */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                    <span className="text-lg sm:text-xl md:text-2xl font-semibold whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'Kufam, sans-serif', color: '#2C2C2C' }}>Collect:</span>
+                    <span className="text-lg sm:text-xl md:text-2xl font-semibold whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'Kufam, sans-serif', color: '#2C2C2C' }}>{t.homepage.hero.collect}</span>
                     <div className="flex items-center gap-2 sm:gap-3 flex-nowrap">
                       {/* ARS Badge */}
                       <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl flex-shrink-0" style={{ 
@@ -218,7 +231,7 @@ export default function HomePage() {
                   
                   {/* Receive Section */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                    <span className="text-lg sm:text-xl md:text-2xl font-semibold whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'Kufam, sans-serif', color: '#2C2C2C' }}>Receive:</span>
+                    <span className="text-lg sm:text-xl md:text-2xl font-semibold whitespace-nowrap flex-shrink-0" style={{ fontFamily: 'Kufam, sans-serif', color: '#2C2C2C' }}>{t.homepage.hero.receive}</span>
                     <div className="flex items-center gap-2 sm:gap-3 flex-nowrap">
                       {/* USDT Badge */}
                       <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl flex-shrink-0" style={{ 
@@ -289,7 +302,7 @@ export default function HomePage() {
                 <div className="flex flex-col items-start mb-6">
                   <Button size="lg" className="text-lg sm:text-xl md:text-2xl px-8 sm:px-10 py-5 sm:py-6 text-white mb-2 rounded-xl w-full sm:w-auto" style={{ backgroundColor: '#FF6A00', fontFamily: 'Kufam, sans-serif' }} asChild>
                     <Link href="/auth/register" className="flex items-center justify-center">
-                      Get Started
+                      {t.homepage.cta.button}
                       <ArrowRight className="ml-2 w-5 h-5 sm:w-6 sm:h-6" />
                     </Link>
                   </Button>
@@ -333,14 +346,14 @@ export default function HomePage() {
             >
               <div className="text-white">
                 <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  Start beating
+                  {t.homepage.promoCards.startBeating.title1}
                 </h3>
                 <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  inflation
+                  {t.homepage.promoCards.startBeating.title2}
                 </h3>
                 
                 <button className="bg-white text-orange-600 px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-50 transition-colors text-sm">
-                  Start
+                  {t.homepage.promoCards.startBeating.button}
                   <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -361,17 +374,17 @@ export default function HomePage() {
             >
               <div className="text-white">
                 <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  Interoperable QR:
+                  {t.homepage.promoCards.interoperableQR.title1}
                 </h3>
                 <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  accept any
+                  {t.homepage.promoCards.interoperableQR.title2}
                 </h3>
                 <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  wallet
+                  {t.homepage.promoCards.interoperableQR.title3}
                 </h3>
                 
                 <button className="bg-orange-500 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:bg-orange-600 transition-colors text-sm">
-                  Learn more
+                  {t.homepage.promoCards.interoperableQR.button}
                   <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -395,17 +408,17 @@ export default function HomePage() {
             >
               <div className="text-orange-600">
                 <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  +50 Merchants
+                  {t.homepage.promoCards.merchants.title1}
                 </h3>
                 <h3 className="font-bold mb-1 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  choose
+                  {t.homepage.promoCards.merchants.title2}
                 </h3>
                 <h3 className="font-bold mb-4 sm:text-xl sm:leading-normal" style={{ fontFamily: 'Kufam, sans-serif', fontSize: '1rem', lineHeight: '1.2rem' }}>
-                  MidatoPay
+                  {t.homepage.promoCards.merchants.title3}
                 </h3>
                 
                 <button className="bg-gradient-to-r from-orange-500 to-orange-400 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:from-orange-600 hover:to-orange-500 transition-colors text-sm">
-                  Join us
+                  {t.homepage.promoCards.merchants.button}
                   <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -428,13 +441,13 @@ export default function HomePage() {
               className="text-4xl md:text-5xl font-bold mb-6"
               style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
             >
-              Cómo funciona MidatoPay
+              {t.homepage.howItWorks.title}
             </h2>
             <p 
               className="text-xl max-w-3xl mx-auto"
               style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
             >
-              Un proceso simple y seguro para proteger tus ventas de la inflación
+              {t.homepage.howItWorks.subtitle}
             </p>
           </div>
 
@@ -519,31 +532,31 @@ export default function HomePage() {
                     className="text-lg md:text-2xl font-medium leading-relaxed mb-2"
                     style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    Un ciclo dinámico
+                    {t.homepage.howItWorks.description.line1}
                   </p>
                   <p 
                     className="text-lg md:text-2xl font-medium leading-relaxed mb-2"
                     style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    iterativo enfocado en
+                    {t.homepage.howItWorks.description.line2}
                   </p>
                   <p 
                     className="text-lg md:text-2xl font-bold leading-relaxed mb-2"
                     style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    simplicidad,
+                    {t.homepage.howItWorks.description.line3}
                   </p>
                   <p 
                     className="text-lg md:text-2xl font-bold leading-relaxed mb-2"
                     style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    personalización
+                    {t.homepage.howItWorks.description.line4}
                   </p>
                   <p 
                     className="text-lg md:text-2xl font-bold leading-relaxed"
                     style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    y confianza del usuario.
+                    {t.homepage.howItWorks.description.line5}
                   </p>
                 </div>
               </div>
@@ -642,13 +655,13 @@ export default function HomePage() {
               className="text-4xl md:text-5xl font-bold mb-6"
               style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
             >
-              Problemas
+              {t.homepage.problems.title}
             </h2>
             <p 
               className="text-xl max-w-3xl mx-auto"
               style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
             >
-              Exploramos las expectativas y problemas potenciales de los comerciantes para simplificar su experiencia.
+              {t.homepage.problems.subtitle}
             </p>
           </motion.div>
 
@@ -677,14 +690,13 @@ export default function HomePage() {
                 className="text-2xl font-bold"
                 style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
               >
-                Pérdida de valor por inflación
+                {t.homepage.problems.problem1.title}
               </h3>
               <p 
                 className="text-lg leading-relaxed"
                 style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
               >
-                Los comerciantes ven cómo sus ventas en pesos argentinos pierden valor día a día debido a la inflación. 
-                No entienden cómo proteger sus ingresos sin cambiar su forma de cobrar.
+                {t.homepage.problems.problem1.description}
               </p>
             </motion.div>
 
@@ -711,14 +723,13 @@ export default function HomePage() {
                 className="text-2xl font-bold"
                 style={{ color: '#2C2C2C', fontFamily: 'Kufam, sans-serif' }}
               >
-                Complejidad técnica innecesaria
+                {t.homepage.problems.problem2.title}
               </h3>
               <p 
                 className="text-lg leading-relaxed"
                 style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
               >
-                Los clientes llegan al comercio y no pueden entender cómo pagar con criptomonedas. 
-                Todo parece complicado, necesitan wallets, conocimientos técnicos, y terminan abandonando la compra.
+                {t.homepage.problems.problem2.description}
               </p>
             </motion.div>
           </div>
@@ -750,8 +761,7 @@ export default function HomePage() {
                 className="text-base leading-relaxed mb-6 max-w-md"
                 style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
               >
-                Protege tus ventas de la inflación con pagos en criptomonedas. 
-                Conversión automática y seguridad blockchain para tu negocio.
+                {t.homepage.footer.description}
               </p>
             </div>
 
@@ -761,7 +771,7 @@ export default function HomePage() {
                 className="text-lg font-bold mb-6"
                 style={{ color: '#FFFFFF', fontFamily: 'Kufam, sans-serif' }}
               >
-                Producto
+                {t.homepage.footer.product}
               </h4>
               <ul className="space-y-3">
                 <li>
@@ -770,7 +780,7 @@ export default function HomePage() {
                     className="text-base hover:opacity-80 transition-opacity"
                     style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    Cómo funciona
+                    {t.homepage.footer.howItWorks}
                   </a>
                 </li>
                 <li>
@@ -779,7 +789,7 @@ export default function HomePage() {
                     className="text-base hover:opacity-80 transition-opacity"
                     style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    Precios
+                    {t.homepage.footer.pricing}
                   </a>
                 </li>
                 <li>
@@ -788,7 +798,7 @@ export default function HomePage() {
                     className="text-base hover:opacity-80 transition-opacity"
                     style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    Seguridad
+                    {t.homepage.footer.security}
                   </a>
                 </li>
                 <li>
@@ -797,7 +807,7 @@ export default function HomePage() {
                     className="text-base hover:opacity-80 transition-opacity"
                     style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    API
+                    {t.homepage.footer.api}
                   </a>
                 </li>
               </ul>
@@ -809,7 +819,7 @@ export default function HomePage() {
                 className="text-lg font-bold mb-6"
                 style={{ color: '#FFFFFF', fontFamily: 'Kufam, sans-serif' }}
               >
-                Soporte
+                {t.homepage.footer.support}
               </h4>
               <ul className="space-y-3">
                 <li>
@@ -818,7 +828,7 @@ export default function HomePage() {
                     className="text-base hover:opacity-80 transition-opacity"
                     style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    Centro de Ayuda
+                    {t.homepage.footer.helpCenter}
                   </a>
                 </li>
                 <li>
@@ -827,7 +837,7 @@ export default function HomePage() {
                     className="text-base hover:opacity-80 transition-opacity"
                     style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    Contacto
+                    {t.homepage.footer.contact}
                   </a>
                 </li>
                 <li>
@@ -836,7 +846,7 @@ export default function HomePage() {
                     className="text-base hover:opacity-80 transition-opacity"
                     style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    Documentación
+                    {t.homepage.footer.documentation}
                   </a>
                 </li>
                 <li>
@@ -845,7 +855,7 @@ export default function HomePage() {
                     className="text-base hover:opacity-80 transition-opacity"
                     style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
                   >
-                    Estado del Sistema
+                    {t.homepage.footer.systemStatus}
                   </a>
                 </li>
               </ul>
@@ -865,7 +875,7 @@ export default function HomePage() {
                 className="text-sm"
                 style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
               >
-                © 2024 MidatoPay. Todos los derechos reservados.
+                {t.homepage.footer.copyright}
               </p>
             </div>
             <div className="flex space-x-6">
@@ -874,21 +884,21 @@ export default function HomePage() {
                 className="text-sm hover:opacity-80 transition-opacity"
                 style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
               >
-                Política de Privacidad
+                {t.homepage.footer.privacy}
               </a>
               <a 
                 href="#terminos" 
                 className="text-sm hover:opacity-80 transition-opacity"
                 style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
               >
-                Términos de Servicio
+                {t.homepage.footer.terms}
               </a>
               <a 
                 href="#cookies" 
                 className="text-sm hover:opacity-80 transition-opacity"
                 style={{ color: '#8B8B8B', fontFamily: 'Kufam, sans-serif' }}
               >
-                Cookies
+                {t.homepage.footer.cookies}
               </a>
             </div>
           </div>
