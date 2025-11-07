@@ -14,7 +14,6 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import PixelBlast from '@/components/PixelBlast'
 import CustomHeader from '@/components/CustomHeader'
 import ScrollVelocity from '@/components/ScrollVelocity'
 
@@ -110,31 +109,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: '#f7f7f6' }}>
-      {/* PixelBlast Background - Solo en desktop para evitar problemas en móvil */}
-      <div className="absolute inset-0 z-0 hidden md:block">
-        <PixelBlast
-          variant="circle"
-          pixelSize={4}
-          color="#fe6c1c"
-          patternScale={2.5}
-          patternDensity={0.8}
-          pixelSizeJitter={0.3}
-          enableRipples
-          rippleSpeed={0.3}
-          rippleThickness={0.15}
-          rippleIntensityScale={1.2}
-          liquid
-          liquidStrength={0.08}
-          liquidRadius={1.0}
-          liquidWobbleSpeed={4}
-          speed={0.4}
-          edgeFade={0.3}
-          transparent
-          className=""
-          style={{}}
-        />
-      </div>
-      
       {/* Content */}
       <div className="relative z-10 pt-20 sm:pt-24">
       {/* Custom Header */}
@@ -171,9 +145,12 @@ export default function HomePage() {
       </div>
 
       {/* Hero Section */}
-      <section className="py-8 sm:py-12 md:py-16 px-4 sm:px-6" style={{ 
-        background: 'linear-gradient(180deg, rgba(255, 106, 0, 0.4) 0%, rgba(255, 106, 0, 0.1) 40%, rgba(255, 255, 255, 1) 50%)' 
-      }}>
+      <section 
+        className="py-8 sm:py-12 md:py-16 px-4 sm:px-6" 
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(255, 106, 0, 0.4) 0%, rgba(255, 106, 0, 0.1) 40%, rgba(255, 255, 255, 1) 50%)' 
+        }}
+      >
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             {/* Left Side - Content */}
