@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'MidatoPay - El Presente y el Futuro de tus pagos',
-  description: 'Sistema de pagos que permite a comercios recibir pagos en criptomonedas y convertirlos automáticamente a pesos argentinos.',
+  description: 'Sistema de pagos que permite a comercios recibir pagos en pesos argentinos y convertirlos automáticamente en criptomonedas.',
   keywords: ['pagos', 'criptomonedas', 'USDT', 'Bitcoin', 'Ethereum', 'Argentina', 'ARS'],
   authors: [{ name: 'MidatoPay Team' }],
   icons: {
@@ -20,14 +20,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'MidatoPay - El Presente y el Futuro de tus pagos',
-    description: 'Recibe pagos en criptomonedas y conviértelos automáticamente a pesos argentinos',
+    description: 'Recibe pagos en pesos argentinos y conviértelos automáticamente en criptomonedas',
     type: 'website',
     locale: 'es_AR',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'MidatoPay - El Presente y el Futuro de tus pagos',
-    description: 'Recibe pagos en criptomonedas y conviértelos automáticamente a pesos argentinos',
+    description: 'Recibe pagos en pesos argentinos y conviértelos automáticamente en criptomonedas',
   },
   robots: {
     index: true,
