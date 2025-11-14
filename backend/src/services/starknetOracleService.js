@@ -231,9 +231,9 @@ class StarknetOracleService {
     // Selectores conocidos para las funciones del Oracle y USDT Token
     const selectors = {
       'quote_ars_to_usdt': '0x35cc48151d07616d346a3d1d328772a9944e6564a7dca5339beb8915634d309',
-      'get_rate_ppm': '0x03b9c4b0b8c7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7',
-      'get_scale': '0x04b9c4b0b8c7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7',
-      'is_active': '0x05b9c4b0b8c7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7',
+      'get_rate_ppm': '0x0042152386121e784381a17f694d6b633f837a242a353d9e4e6e66539a2d603a',
+      'get_scale': '0x01824ff432446736c0a009401b2a9e33a6021e15b4d752f1e2925b0f1ed53802',
+      'is_active': '0x02863920721764653e05908b98144b6118d0034a5d89e4722883492a54955a5b',
       'balanceOf': '0x2e4263afad30923c891518314c3c95dbe830a16874e8a5761d37084e37954567'
     };
 
