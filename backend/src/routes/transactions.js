@@ -182,6 +182,52 @@ router.post('/:transactionId/confirm', async (req, res, next) => {
   }
 });
 
+// Obtener transacciones del usuario autenticado (DEBE estar ANTES de /:transactionId)
+router.get('/my-transactions', authenticateToken, async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = { userId: req.user.id };
+    if (status) {
+      where.status = status;
+    }
+
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: {
+          payment: {
+            select: {
+              id: true,
+              amount: true,
+              currency: true,
+              concept: true,
+              status: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: parseInt(limit)
+      }),
+      prisma.transaction.count({ where })
+    ]);
+
+    res.json({
+      transactions,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Obtener datos completos de una transacción
 router.get('/:transactionId', async (req, res, next) => {
   try {
@@ -280,52 +326,6 @@ router.get('/:transactionId/status', async (req, res, next) => {
         updatedAt: transaction.updatedAt
       },
       payment: transaction.payment
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Obtener transacciones del usuario autenticado
-router.get('/my-transactions', authenticateToken, async (req, res, next) => {
-  try {
-    const { page = 1, limit = 10, status } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    const where = { userId: req.user.id };
-    if (status) {
-      where.status = status;
-    }
-
-    const [transactions, total] = await Promise.all([
-      prisma.transaction.findMany({
-        where,
-        include: {
-          payment: {
-            select: {
-              id: true,
-              amount: true,
-              currency: true,
-              concept: true,
-              status: true
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: parseInt(limit)
-      }),
-      prisma.transaction.count({ where })
-    ]);
-
-    res.json({
-      transactions,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit))
-      }
     });
   } catch (error) {
     next(error);

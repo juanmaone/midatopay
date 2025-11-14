@@ -6,8 +6,15 @@ const prisma = new PrismaClient()
 
 // Validation middleware
 const validateWaitlistEntry = [
-  body('email').isEmail().normalizeEmail().withMessage('Email inválido'),
-  body('monthly_billing_usd').isInt({ min: 1000 }).withMessage('La facturación mensual debe ser al menos $1,000 USD')
+  body('email')
+    .trim()
+    .isEmail()
+    .withMessage('Email inválido')
+    .normalizeEmail(),
+  body('monthly_billing_usd')
+    .toInt()
+    .isInt({ min: 500 })
+    .withMessage('La facturación mensual debe ser al menos $500 USD')
 ]
 
 // POST /api/waitlist - Join waitlist
@@ -44,12 +51,6 @@ router.post('/', validateWaitlistEntry, async (req, res) => {
       }
     })
 
-    console.log('✅ Nueva entrada en lista de espera:', {
-      id: waitlistEntry.id,
-      email: waitlistEntry.email,
-      monthly_billing_usd: waitlistEntry.monthlyBillingUsd,
-      created_at: waitlistEntry.createdAt
-    })
 
     res.status(201).json({
       message: 'Te has unido exitosamente a la lista de espera',

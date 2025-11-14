@@ -1,4 +1,3 @@
-import { connect, disconnect } from '@starknet-react/core'
 import { ArgentMobileConnector } from 'starknetkit/argentMobile'
 import { WebWalletConnector } from 'starknetkit/webwallet'
 import { InjectedConnector } from 'starknetkit/injected'
@@ -235,17 +234,19 @@ export class StarknetPaymentService {
       console.error('❌ Error procesando pago:', error)
       
       // Mejorar mensajes de error para el usuario
-      if (error.message.includes('Token not allowed')) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      
+      if (errorMessage.includes('Token not allowed')) {
         throw new Error('Este token no está soportado por MidatoPay')
-      } else if (error.message.includes('Amount must be greater than zero')) {
+      } else if (errorMessage.includes('Amount must be greater than zero')) {
         throw new Error('El monto debe ser mayor a cero')
-      } else if (error.message.includes('Invalid merchant address')) {
+      } else if (errorMessage.includes('Invalid merchant address')) {
         throw new Error('Dirección de comercio inválida')
-      } else if (error.message.includes('Payment already processed')) {
+      } else if (errorMessage.includes('Payment already processed')) {
         throw new Error('Este pago ya fue procesado anteriormente')
       }
       
-      throw error
+      throw error instanceof Error ? error : new Error(String(error))
     }
   }
 
@@ -257,7 +258,7 @@ export class StarknetPaymentService {
       return balance.toString()
     } catch (error) {
       console.error('❌ Error verificando balance:', error)
-      throw error
+      throw error instanceof Error ? error : new Error(String(error))
     }
   }
 

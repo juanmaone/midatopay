@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useAuthStore } from '@/store/auth'
 
 interface Transaction {
   id: string
@@ -37,15 +38,16 @@ export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const token = useAuthStore((state) => state.token)
 
   const fetchTransactions = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const token = localStorage.getItem('token')
       if (!token) {
-        throw new Error('No authentication token found')
+        setLoading(false)
+        return // No error si no hay token, simplemente no carga transacciones
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/my-transactions?limit=10`, {
@@ -70,8 +72,13 @@ export function useTransactions() {
   }
 
   useEffect(() => {
-    fetchTransactions()
-  }, [])
+    if (token) {
+      fetchTransactions()
+    } else {
+      setLoading(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
 
   return {
     transactions,

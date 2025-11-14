@@ -7,11 +7,12 @@ const prisma = new PrismaClient();
 class StarknetService {
   constructor() {
     this.provider = new RpcProvider({
-      nodeUrl: process.env.STARKNET_RPC_URL || "https://starknet-sepolia.public.blastapi.io/rpc/v0_7"
+      nodeUrl: process.env.STARKNET_RPC_URL || "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_9/b6oJemkCmlgEGq1lXC5uTXwOHZA14WNP"
     });
     
     this.paymentGatewayAddress = process.env.STARKNET_PAYMENT_GATEWAY_ADDRESS;
-    this.paymentGatewayABI = require('../starknet/abis/PaymentGateway.json');
+    // ABI simplificado para PaymentGateway (si el archivo JSON no existe, usar ABI inline)
+    this.paymentGatewayABI = this.getPaymentGatewayABI();
     
     // Direcciones de tokens en Sepolia testnet
     this.tokens = {
@@ -290,6 +291,24 @@ class StarknetService {
       clearInterval(this.eventPollingInterval);
     }
     console.log('🛑 Servicio Starknet detenido');
+  }
+
+  // Obtener ABI del PaymentGateway (inline para evitar archivo faltante)
+  getPaymentGatewayABI() {
+    return [
+      {
+        name: 'pay',
+        type: 'function',
+        inputs: [
+          { name: 'merchant_address', type: 'core::starknet::contract_address::ContractAddress' },
+          { name: 'amount', type: 'core::integer::u256' },
+          { name: 'token_address', type: 'core::starknet::contract_address::ContractAddress' },
+          { name: 'payment_id', type: 'core::felt252' }
+        ],
+        outputs: [{ type: 'core::bool' }],
+        stateMutability: 'external'
+      }
+    ];
   }
 }
 

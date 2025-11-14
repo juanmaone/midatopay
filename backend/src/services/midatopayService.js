@@ -221,15 +221,39 @@ class MidatoPayService {
     const execAsync = promisify(exec);
 
     try {
-      // Construir el comando starkli con ruta completa
-      const contractAddress = '0x062161e7494635ec85e2f3e89bde170b433b8d4b07286c2754a9676fa32bbbb5';
-      const starkliPath = 'C:\\Users\\monst\\midatopay\\starknet-token\\starkli\\.starkli\\bin\\starkli.exe';
+      // Construir el comando starkli - compatible con Windows y Linux
+      const contractAddress = process.env.STARKNET_PAYMENT_GATEWAY_ADDRESS || '0x062161e7494635ec85e2f3e89bde170b433b8d4b07286c2754a9676fa32bbbb5';
+      
+      // Detectar sistema operativo y usar la ruta correcta
+      const isWindows = process.platform === 'win32';
+      const starkliPath = process.env.STARKLI_PATH || (isWindows 
+        ? 'C:\\Users\\monst\\midatopay\\starknet-token\\starkli\\.starkli\\bin\\starkli.exe'
+        : 'starkli' // En Linux, starkli debe estar instalado globalmente o en PATH
+      );
+      
+      // Rutas de configuración (keystore y account)
+      const path = require('path');
+      const starknetTokenPath = process.env.STARKNET_TOKEN_PATH || (isWindows
+        ? 'C:\\Users\\monst\\midatopay\\starknet-token'
+        : '/var/www/midatopay/starknet-token'
+      );
+      
+      // Usar path.join para construir rutas correctamente según el OS
+      const accountPath = process.env.STARKNET_ACCOUNT_PATH || (isWindows
+        ? path.join(starknetTokenPath, 'starkli', '.starkli', 'accounts', 'sepolia', 'my.json')
+        : path.join(starknetTokenPath, 'starkli', '.starkli', 'accounts', 'sepolia', 'my.json')
+      );
+      const keystorePath = process.env.STARKNET_KEYSTORE_PATH || (isWindows
+        ? path.join(starknetTokenPath, 'starkli', '.starkli', 'keystores', 'my_keystore.json')
+        : path.join(starknetTokenPath, 'starkli', '.starkli', 'keystores', 'my_keystore.json')
+      );
+      const keystorePassword = process.env.STARKNET_KEYSTORE_PASSWORD || 'vargaviella';
       
       // Convertir paymentId a formato hexadecimal válido para felt252
       const paymentIdHex = '0x' + Buffer.from(paymentId, 'utf8').toString('hex');
       
       // Primero hacer un dry-run para verificar que el calldata es correcto
-      const dryRunCommand = `"${starkliPath}" call ${contractAddress} pay ${merchantAddress} u256:${amountARS} ${tokenAddress} ${paymentIdHex} --network sepolia`;
+      const dryRunCommand = `${starkliPath} call ${contractAddress} pay ${merchantAddress} u256:${amountARS} ${tokenAddress} ${paymentIdHex} --network sepolia`;
       
       console.log('🧪 Ejecutando dry-run para verificar calldata:', dryRunCommand);
       
@@ -246,7 +270,7 @@ class MidatoPayService {
       }
 
       // Ahora ejecutar la transacción real
-      const command = `"${starkliPath}" invoke ${contractAddress} pay ${merchantAddress} u256:${amountARS} ${tokenAddress} ${paymentIdHex} --account C:\\Users\\monst\\midatopay\\starknet-token\\starkli\\.starkli\\accounts\\sepolia\\my.json --keystore C:\\Users\\monst\\midatopay\\starknet-token\\starkli\\.starkli\\keystores\\my_keystore.json --keystore-password vargaviella --network sepolia`;
+      const command = `${starkliPath} invoke ${contractAddress} pay ${merchantAddress} u256:${amountARS} ${tokenAddress} ${paymentIdHex} --account ${accountPath} --keystore ${keystorePath} --keystore-password ${keystorePassword} --network sepolia`;
 
       console.log('🔧 Ejecutando comando starkli:', command);
 
@@ -336,7 +360,7 @@ class MidatoPayService {
       const completedPayments = await prisma.payment.count({
         where: {
           merchantId,
-          status: 'COMPLETED'
+          status: 'PAID'
         }
       });
 
@@ -420,11 +444,11 @@ class MidatoPayService {
           await prisma.payment.update({
             where: { id: payment.id },
             data: { 
-              status: 'COMPLETED',
+              status: 'PAID',
               updatedAt: new Date()
             }
           });
-          console.log('✅ Estado del pago actualizado a COMPLETED');
+          console.log('✅ Estado del pago actualizado a PAID');
         } catch (updateError) {
           console.warn('⚠️ Error actualizando estado del pago:', updateError.message);
         }
@@ -439,7 +463,7 @@ class MidatoPayService {
           merchantName: payment.user.name,
           concept: payment.concept,
           expiresAt: payment.expiresAt.toISOString(),
-          status: (starkliResult && starkliResult.success) ? 'COMPLETED' : payment.status,
+          status: (starkliResult && starkliResult.success) ? 'PAID' : payment.status,
           // Datos de la transacción blockchain
           blockchainTransaction: starkliResult ? {
             hash: starkliResult.transactionHash,

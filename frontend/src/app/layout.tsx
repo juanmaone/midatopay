@@ -3,24 +3,31 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/components/providers/AuthProvider'
+import { LanguageProvider } from '@/contexts/LanguageContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MidatoPay - Pagos con Criptomonedas',
-  description: 'Sistema de pagos que permite a comercios recibir pagos en criptomonedas y convertirlos automáticamente a pesos argentinos.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  title: 'MidatoPay - El Presente y el Futuro de tus pagos',
+  description: 'Sistema de pagos que permite a comercios recibir pagos en pesos argentinos y convertirlos automáticamente en criptomonedas.',
   keywords: ['pagos', 'criptomonedas', 'USDT', 'Bitcoin', 'Ethereum', 'Argentina', 'ARS'],
   authors: [{ name: 'MidatoPay Team' }],
+  icons: {
+    icon: '/midatopay.svg',
+    shortcut: '/midatopay.svg',
+    apple: '/midatopay.svg',
+  },
   openGraph: {
-    title: 'MidatoPay - Pagos con Criptomonedas',
-    description: 'Recibe pagos en criptomonedas y conviértelos automáticamente a pesos argentinos',
+    title: 'MidatoPay - El Presente y el Futuro de tus pagos',
+    description: 'Recibe pagos en pesos argentinos y conviértelos automáticamente en criptomonedas',
     type: 'website',
     locale: 'es_AR',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MidatoPay - Pagos con Criptomonedas',
-    description: 'Recibe pagos en criptomonedas y conviértelos automáticamente a pesos argentinos',
+    title: 'MidatoPay - El Presente y el Futuro de tus pagos',
+    description: 'Recibe pagos en pesos argentinos y conviértelos automáticamente en criptomonedas',
   },
   robots: {
     index: true,
@@ -42,33 +49,42 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          {children}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
+        <LanguageProvider>
+          <AuthProvider>
+            {children}
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#FFFFFF',
+                  color: '#2C2C2C',
+                  border: '2px solid #FF6A00',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  fontFamily: 'Kufam, sans-serif',
+                  fontSize: '16px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  maxWidth: '500px'
                 },
-              },
-              error: {
-                duration: 5000,
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
+                success: {
+                  duration: 5000,
+                  iconTheme: {
+                    primary: '#FF6A00',
+                    secondary: '#FFFFFF',
+                  },
                 },
-              },
-            }}
-          />
-        </AuthProvider>
+                error: {
+                  duration: 5000,
+                  iconTheme: {
+                    primary: '#FF6A00',
+                    secondary: '#FFFFFF',
+                  },
+                },
+              }}
+            />
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   )

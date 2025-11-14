@@ -1,5 +1,5 @@
 // Wallet Manager - Genera y gestiona wallets persistentes para comercios
-import { Account, RpcProvider, ec, json } from 'starknet';
+import { Account, RpcProvider, ec, json, constants } from 'starknet';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -25,7 +25,7 @@ export class WalletManager {
     // Generar dirección usando el método correcto de Starknet
     const provider = new RpcProvider({ 
       nodeUrl: this.SEPOLIA_RPC,
-      chainId: '0x534e5f5345504f4c4941' // SN_SEPOLIA
+      chainId: constants.StarknetChainId.SN_SEPOLIA
     });
     
     // Generar publicKey desde la clave privada
@@ -133,7 +133,7 @@ export class WalletManager {
     try {
       const provider = new RpcProvider({ 
         nodeUrl: this.SEPOLIA_RPC,
-        chainId: '0x534e5f5345504f4c4941'
+        chainId: constants.StarknetChainId.SN_SEPOLIA
       });
 
       return new Account(provider, wallet.address, wallet.privateKey);

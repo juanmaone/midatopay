@@ -127,6 +127,21 @@
   .payment-option.selected {
     @apply border-orange-500 bg-orange-50;
   }
+
+  /* Animación para la barra de información (loop continuo sin salto) */
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(calc(-50% - 3rem));
+    }
+  }
+
+  .animate-scroll {
+    animation: scroll 20s linear infinite;
+    will-change: transform;
+  }
   
   .status-badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
@@ -213,4 +228,87 @@
 
 .custom-pill-nav .pill-logo {
   border: 1px solid rgba(26, 26, 26, 0.1);
+}
+
+/* Animación de borde con gradiente para tarjetas de estadísticas */
+@keyframes rotate-border {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.stats-card-border {
+  position: relative;
+  border-radius: 1rem;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+.stats-card-border::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    #FF6A00,
+    #FFFFFF,
+    #FF6A00,
+    #FF8C42,
+    #FFFFFF,
+    #FF6A00,
+    #FFB366,
+    #FFFFFF,
+    #FF6A00
+  );
+  animation: rotate-border 3s linear infinite;
+  z-index: 0;
+}
+
+.stats-card-border::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: calc(1rem - 3px);
+  background: #FFFFFF;
+  z-index: 1;
+}
+
+.stats-card-content {
+  position: relative;
+  z-index: 2;
+  border-radius: calc(1rem - 3px);
+  background: transparent;
+}
+
+/* Animación de gradiente en movimiento para botón CTA */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.cta-button-gradient {
+  background: linear-gradient(
+    135deg,
+    #FF6A00,
+    #FF7A1A,
+    #FF8C42,
+    #FF7A1A,
+    #FF6A00
+  );
+  background-size: 200% 200%;
+  animation: gradient-shift 5s ease infinite;
+  border-radius: 2rem;
 }

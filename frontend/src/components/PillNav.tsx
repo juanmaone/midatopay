@@ -273,7 +273,7 @@ const PillNav = ({
     ['--pill-bg']: pillColor,
     ['--hover-text']: hoveredPillTextColor,
     ['--pill-text']: resolvedPillTextColor
-  }
+  } as React.CSSProperties
 
   return (
     <div className="pill-nav-container">

@@ -412,7 +412,11 @@ export default function QRScannerPage() {
                           Simulate QR (Test)
                         </Button>
                         <Button 
-                          onClick={() => window.location.reload()}
+                          onClick={() => {
+                            if (typeof window !== 'undefined') {
+                              window.location.reload()
+                            }
+                          }}
                           variant="outline"
                           size="sm"
                           className="bg-white/90 hover:bg-white"

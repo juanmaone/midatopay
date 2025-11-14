@@ -11,12 +11,25 @@ const oracleRoutes = require('./routes/oracle');
 const waitlistRoutes = require('./routes/waitlist');
 const midatoPayRoutes = require('./routes/midatopay');
 const walletRoutes = require('./routes/wallet');
+const statsRoutes = require('./routes/stats');
+const faqRoutes = require('./routes/faq');
 const { errorHandler } = require('./middleware/errorHandler');
 const { initializeWebSocket } = require('./services/websocket');
 const { startPriceOracle } = require('./services/priceOracle');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Trust proxy (necesario cuando está detrás de Nginx/reverse proxy)
+// En producción, configurar con el número específico de proxies
+// En desarrollo, desactivar para evitar problemas con rate limiting
+if (process.env.NODE_ENV === 'production') {
+  // En producción, confiar solo en el primer proxy (Nginx)
+  app.set('trust proxy', 1);
+} else {
+  // En desarrollo, no confiar en proxies
+  app.set('trust proxy', false);
+}
 
 // Middleware de seguridad
 app.use(helmet());
@@ -35,7 +48,9 @@ app.use(cors({
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: 'Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.'
+  message: 'Demasiadas solicitudes desde esta IP, intenta de nuevo más tarde.',
+  standardHeaders: true,
+  legacyHeaders: false
 });
 app.use('/api/', limiter);
 
@@ -60,6 +75,8 @@ app.use('/api/oracle', oracleRoutes);
 app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/midatopay', midatoPayRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/faq', faqRoutes);
 
 // Middleware de manejo de errores
 app.use(errorHandler);
