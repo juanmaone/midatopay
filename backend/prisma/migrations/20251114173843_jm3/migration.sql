@@ -1,3 +1,9 @@
+/*
+  Warnings:
+
+  - You are about to drop the `merchants` table. If the table is not empty, all the data it contains will be lost.
+
+*/
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('MERCHANT', 'ADMIN');
 
@@ -7,6 +13,9 @@ CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'EXPIRED', 'CANCELLED');
 -- CreateEnum
 CREATE TYPE "TransactionStatus" AS ENUM ('PENDING', 'CONFIRMED', 'FAILED', 'EXPIRED');
 
+-- DropTable
+DROP TABLE "merchants";
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -14,10 +23,16 @@ CREATE TABLE "users" (
     "password" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "phone" TEXT,
+    "walletAddress" TEXT,
+    "privateKey" TEXT,
+    "publicKey" TEXT,
+    "walletCreatedAt" TIMESTAMP(3),
     "role" "UserRole" NOT NULL DEFAULT 'MERCHANT',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "apiKey" TEXT,
+    "apiSecret" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -42,7 +57,8 @@ CREATE TABLE "payments" (
 -- CreateTable
 CREATE TABLE "transactions" (
     "id" TEXT NOT NULL,
-    "paymentId" TEXT NOT NULL,
+    "paymentId" BIGINT NOT NULL,
+    "paymentIdString" TEXT NOT NULL,
     "amount" DECIMAL(18,8) NOT NULL,
     "currency" TEXT NOT NULL,
     "exchangeRate" DECIMAL(18,8),
@@ -84,13 +100,28 @@ CREATE TABLE "exchange_rates" (
     CONSTRAINT "exchange_rates_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "waitlist" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "monthlyBillingUsd" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
+    CONSTRAINT "waitlist_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_apiKey_key" ON "users"("apiKey");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "payments_qrCode_key" ON "payments"("qrCode");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "waitlist_email_key" ON "waitlist"("email");
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -99,4 +130,4 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_userId_fkey" FOREIGN KEY ("userI
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "transactions" ADD CONSTRAINT "transactions_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "payments"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_paymentIdString_fkey" FOREIGN KEY ("paymentIdString") REFERENCES "payments"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

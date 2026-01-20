@@ -164,7 +164,7 @@ CAVOS_APP_ID="app-a5b17a105d604090e051a297a8fad33d"
 CAVOS_API_SECRET="tu_cavos_api_secret_aqui"
 
 # Starknet Configuration
-STARKNET_RPC_URL="https://starknet-sepolia.public.blastapi.io/rpc/v0_9"
+STARKNET_RPC_URL="https://starknet-sepolia.g.alchemy.com/v2/TU_ALCHEMY_API_KEY"
 USDT_CONTRACT_ADDRESS="0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c7b7f451cd475"
 STRK_CONTRACT_ADDRESS="0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d"
 
@@ -677,4 +677,3 @@ docker-compose -f docker-compose.prod.yml up -d --build
 ¡Listo! Tu aplicación debería estar funcionando en producción. 🎉
 
 Si tienes problemas, revisa los logs y la sección de solución de problemas arriba.
-

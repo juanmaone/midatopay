@@ -29,6 +29,10 @@ model User {
   payments     Payment[]
   transactions Transaction[]
 
+  // --- Campos para la API Key ---
+  apiKey    String?  @unique // La clave pública que usarán los desarrolladores
+  apiSecret String?  // El hash del secreto de la API
+
   @@map("users")
 }
 
@@ -127,3 +131,4 @@ enum TransactionStatus {
   FAILED
   EXPIRED
 }
+

@@ -12,6 +12,7 @@ const waitlistRoutes = require('./routes/waitlist');
 const midatoPayRoutes = require('./routes/midatopay');
 const walletRoutes = require('./routes/wallet');
 const statsRoutes = require('./routes/stats');
+const sdkRoutes = require('./routes/sdk.routes'); 
 const faqRoutes = require('./routes/faq');
 const { errorHandler } = require('./middleware/errorHandler');
 const { initializeWebSocket } = require('./services/websocket');
@@ -41,6 +42,7 @@ app.use(cors({
         /^https:\/\/.*\.ngrok\.io$/,
         /^https:\/\/.*\.ngrok-free\.app$/
       ],
+      origin: '*',
   credentials: true
 }));
 
@@ -77,6 +79,9 @@ app.use('/api/midatopay', midatoPayRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/faq', faqRoutes);
+
+// Añade las rutas del SDK
+app.use('/api/sdk', sdkRoutes);
 
 // Middleware de manejo de errores
 app.use(errorHandler);
