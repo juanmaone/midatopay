@@ -1,0 +1,98 @@
+{
+  "family": "midatopay-backend-test",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "566287346792.dkr.ecr.us-east-1.amazonaws.com/midatopay/backend:test-latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3001,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3001"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:DATABASE_URL::"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:JWT_SECRET::"
+        },
+        {
+          "name": "JWT_EXPIRES_IN",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:JWT_EXPIRES_IN::"
+        },
+        {
+          "name": "STARKNET_PRIVATE_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:STARKNET_PRIVATE_KEY::"
+        },
+        {
+          "name": "STARKNET_RPC_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:STARKNET_RPC_URL::"
+        },
+        {
+          "name": "CAVOS_APP_ID",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:CAVOS_APP_ID::"
+        },
+        {
+          "name": "CAVOS_API_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:CAVOS_API_SECRET::"
+        },
+        {
+          "name": "CLERK_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:CLERK_SECRET_KEY::"
+        },
+        {
+          "name": "CLERK_JWKS_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:CLERK_JWKS_URL::"
+        },
+        {
+          "name": "FRONTEND_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:FRONTEND_URL::"
+        },
+        {
+          "name": "USDT_DECIMALS",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:USDT_DECIMALS::"
+        },
+        {
+          "name": "WS_PORT",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:566287346792:secret:midatopay-test-backend-BocomI:WS_PORT::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/midatopay-backend-test",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ],
+  "executionRoleArn": "arn:aws:iam::566287346792:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::566287346792:role/ecsTaskRole"
+}

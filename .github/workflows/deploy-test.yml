@@ -1,0 +1,405 @@
+name: Deploy to Test Environment
+
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch: # Permite ejecución manual
+
+env:
+  AWS_REGION: us-east-1
+  ECR_BACKEND_REPOSITORY: midatopay/backend
+  ECR_FRONTEND_REPOSITORY: midatopay/frontend
+  ENVIRONMENT: test
+
+jobs:
+  # Job 1: Tests y Seguridad
+  test-and-scan:
+    name: Run Tests & Security Scans
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Para análisis de seguridad completo
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      # Tests Unitarios Backend
+      - name: Run Backend Unit Tests
+        working-directory: ./backend
+        run: npm test -- --passWithNoTests
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+
+      # Tests Unitarios Frontend
+      - name: Run Frontend Unit Tests
+        working-directory: ./frontend
+        run: npm test -- --passWithNoTests
+        continue-on-error: true
+
+      # Linting Backend
+      - name: Run ESLint (Backend)
+        working-directory: ./backend
+        run: npx eslint src/ --max-warnings=0 || true
+        continue-on-error: true
+
+      # Linting Frontend
+      - name: Run ESLint (Frontend)
+        working-directory: ./frontend
+        run: npm run lint || true
+        continue-on-error: true
+
+      # Dependency Vulnerability Scan Backend
+      - name: Run npm audit (Backend)
+        working-directory: ./backend
+        run: npm audit --audit-level=moderate || true
+        continue-on-error: true
+
+      # Dependency Vulnerability Scan Frontend
+      - name: Run npm audit (Frontend)
+        working-directory: ./frontend
+        run: npm audit --audit-level=moderate || true
+        continue-on-error: true
+
+      # Secrets Detection
+      - name: Run TruffleHog (Secrets Detection)
+        uses: trufflesecurity/trufflehog@main
+        continue-on-error: true
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  # Job 2: Build y Push Docker Images
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: test-and-scan
+    
+    outputs:
+      backend-image: ${{ steps.backend-image.outputs.image }}
+      frontend-image: ${{ steps.frontend-image.outputs.image }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Backend Docker Image
+        working-directory: ./backend
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            --build-arg NODE_ENV=test \
+            -t $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:test-latest \
+            .
+
+      - name: Scan Backend Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_BACKEND_REPOSITORY }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
+        with:
+          sarif_file: 'trivy-backend-results.sarif'
+
+      - name: Push Backend Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:test-latest
+
+      - name: Set Backend Image Output
+        id: backend-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: echo "image=$ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build Frontend Docker Image
+        working-directory: ./frontend
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://api-test.midatopay.com \
+            --build-arg NODE_ENV=production \
+            -t $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:test-latest \
+            .
+
+      - name: Scan Frontend Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPOSITORY }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push Frontend Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:test-latest
+
+      - name: Set Frontend Image Output
+        id: frontend-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: echo "image=$ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  # Job 3: Deploy Backend a ECS
+  deploy-backend:
+    name: Deploy Backend to ECS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: infrastructure/aws/ecs-task-definition-test.json
+          container-name: backend
+          image: ${{ needs.build-and-push.outputs.backend-image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: midatopay-backend-test
+          cluster: midatopay-test-cluster
+          wait-for-service-stability: true
+
+      - name: Run Database Migrations
+        run: |
+          aws ecs run-task \
+            --cluster midatopay-test-cluster \
+            --task-definition midatopay-backend-test \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.SUBNET_IDS_TEST }}],securityGroups=[${{ secrets.SECURITY_GROUP_ID_TEST }}],assignPublicIp=ENABLED}" \
+            --overrides '{"containerOverrides":[{"name":"backend","command":["npx","prisma","migrate","deploy"]}]}' \
+            --wait
+
+  # Job 4: Deploy Frontend a S3 + CloudFront
+  deploy-frontend:
+    name: Deploy Frontend to S3
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        env:
+          NEXT_PUBLIC_API_URL: https://api-test.midatopay.com
+          NEXT_PUBLIC_ENVIRONMENT: test
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        working-directory: ./frontend
+        run: |
+          aws s3 sync out/ s3://${{ secrets.FRONTEND_BUCKET_TEST }}/ \
+            --delete \
+            --cache-control "public,max-age=31536000,immutable"
+
+      - name: Invalidate CloudFront Cache
+        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_TEST != '' }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_TEST }} \
+            --paths "/*"
+
+  # Job 5: Health Check y Smoke Tests
+  health-check:
+    name: Run Health Checks
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend health check..."
+          max_attempts=30
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -f https://api-test.midatopay.com/health; then
+              echo "Backend is healthy!"
+              exit 0
+            fi
+            
+            echo "Attempt $((attempt + 1))/$max_attempts failed. Retrying in 10 seconds..."
+            sleep 10
+            attempt=$((attempt + 1))
+          done
+          
+          echo "Backend health check failed after $max_attempts attempts"
+          exit 1
+
+      - name: Test API Endpoints
+        run: |
+          echo "Testing API endpoints..."
+          
+          # Test health endpoint
+          curl -f https://api-test.midatopay.com/health
+          
+          # Test API version endpoint (if exists)
+          curl -f https://api-test.midatopay.com/api/version || true
+
+  # Job 6: Notificación
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend, health-check]
+    if: always()
+    
+    steps:
+      - name: Prepare Deployment Status
+        id: status
+        run: |
+          if [[ "${{ needs.deploy-backend.result }}" == "success" && "${{ needs.deploy-frontend.result }}" == "success" && "${{ needs.health-check.result }}" == "success" ]]; then
+            echo "status=✅ SUCCESS" >> $GITHUB_OUTPUT
+            echo "color=#00FF00" >> $GITHUB_OUTPUT
+          else
+            echo "status=❌ FAILED" >> $GITHUB_OUTPUT
+            echo "color=#FF0000" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack Notification
+        uses: 8398a7/action-slack@v3
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "Deployment to TEST Environment ${{ steps.status.outputs.status }}",
+              "attachments": [{
+                "color": "${{ steps.status.outputs.color }}",
+                "fields": [
+                  {
+                    "title": "Environment",
+                    "value": "TEST",
+                    "short": true
+                  },
+                  {
+                    "title": "Branch",
+                    "value": "${{ github.ref_name }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Backend Deploy",
+                    "value": "${{ needs.deploy-backend.result }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Frontend Deploy",
+                    "value": "${{ needs.deploy-frontend.result }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Health Check",
+                    "value": "${{ needs.health-check.result }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Commit",
+                    "value": "${{ github.sha }}",
+                    "short": true
+                  },
+                  {
+                    "title": "URLs",
+                    "value": "Backend: https://api-test.midatopay.com\nFrontend: https://test.midatopay.com",
+                    "short": false
+                  }
+                ]
+              }]
+            }
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🚀 Deployment to TEST\n\n**Status:** ${{ steps.status.outputs.status }}\n\n**Details:**\n- Backend: ${{ needs.deploy-backend.result }}\n- Frontend: ${{ needs.deploy-frontend.result }}\n- Health Check: ${{ needs.health-check.result }}\n\n**URLs:**\n- Backend: https://api-test.midatopay.com\n- Frontend: https://test.midatopay.com\n\n**Commit:** ${{ github.sha }}`
+            })

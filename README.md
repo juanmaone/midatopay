@@ -397,11 +397,128 @@ CREATE TABLE transactions (
 - **Frontend**: Next.js, React, TypeScript
 - **Backend**: Node.js, Express, Prisma
 - **Blockchain**: Cairo, Starknet, Starkli
-- **DevOps**: Docker, CI/CD, Deployment
+- **DevOps**: Docker, GitHub Actions, AWS
 
+## 🔄 CI/CD y Despliegue
+
+### 🚀 Ambientes Disponibles
+
+MidatoPay utiliza GitHub Actions para CI/CD automático con despliegue en AWS:
+
+| Ambiente | Branch | URL | Deploy |
+|----------|--------|-----|--------|
+| **DEV** | `dev` | api-dev.midatopay.com | Automático |
+| **TEST** | `test` | api-test.midatopay.com | Automático |
+| **PROD** | `master` | api.midatopay.com | Manual |
+
+### 📋 Setup Rápido
+
+```powershell
+# 1. Ejecutar script de inicialización
+.\scripts\init-cicd.ps1
+
+# 2. O seguir guía paso a paso
+Get-Content SETUP_TEST_ENVIRONMENT.md
+```
+
+### 🔧 Configuración
+
+Ver documentación completa:
+- **[Guía Completa Setup](SETUP_TEST_ENVIRONMENT.md)** - Configuración paso a paso
+- **[Quick Start](QUICK_START.md)** - Referencia rápida
+- **[Archivos Creados](FILES_CREATED.md)** - Documentación de archivos CI/CD
+- **[Workflows](.github/workflows/README.md)** - Documentación de GitHub Actions
+- **[Infraestructura](infrastructure/aws/README.md)** - Recursos AWS
+
+### 🛠️ Features CI/CD
+
+- ✅ **Testing Automático**: Tests unitarios en cada push
+- ✅ **Security Scanning**: Análisis de vulnerabilidades y secrets
+- ✅ **Container Scanning**: Escaneo de imágenes Docker con Trivy
+- ✅ **Despliegue Automático**: Deploy a ECS Fargate
+- ✅ **Health Checks**: Verificación post-deploy
+- ✅ **Rollback**: Capacidad de rollback rápido
+- ✅ **Notificaciones**: Integración con Slack
+- ✅ **Multi-ambiente**: DEV, TEST, PROD
+
+### 📊 Arquitectura AWS
+
+```
+GitHub → Actions → ECR → ECS Fargate
+                ↓
+              S3 + CloudFront (Frontend)
+                ↓
+              RDS PostgreSQL
+```
+
+### 🔐 Secrets Requeridos
+
+Configurar en GitHub Settings > Secrets:
+
+```
+AWS_ACCOUNT_ID
+AWS_REGION
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+DATABASE_URL_TEST
+STARKNET_PRIVATE_KEY_TEST
+FRONTEND_BUCKET_TEST
+```
+
+Ver lista completa en [SETUP_TEST_ENVIRONMENT.md](SETUP_TEST_ENVIRONMENT.md#21-configurar-github-secrets)
+
+### 🎯 Workflow de Desarrollo
+
+```bash
+# 1. Desarrollo local
+git checkout dev
+# ... hacer cambios ...
+git push origin dev
+# ✅ Deploy automático a DEV
+
+# 2. Testing
+git checkout test
+git merge dev
+git push origin test
+# ✅ Deploy automático a TEST
+
+# 3. Producción
+git checkout master
+git merge test
+git push origin master
+# ⏸️ Requiere aprobación manual
+```
+
+### 📝 Scripts Disponibles
+
+```powershell
+# Validar configuración
+.\scripts\validate-setup.ps1 -Environment test
+
+# Inicializar CI/CD
+.\scripts\init-cicd.ps1
+
+# Backup database
+.\scripts\backup-db.sh
+
+# Check status
+.\scripts\check-status.sh
+```
+
+### 🔍 Monitoreo
+
+- **GitHub Actions**: Ver workflows en tiempo real
+- **CloudWatch**: Logs y métricas en AWS
+- **ECS Console**: Estado de servicios y tasks
+- **RDS Monitoring**: Métricas de base de datos
+
+### 📚 Documentación Adicional
+
+- [Migration Strategy](docs/MIGRATION_STRATEGY.md) - Estrategia de migración a microservicios
+- [SDK Documentation](SDK_API_DOCUMENTATION.md) - Documentación del SDK
+- [Deployment Guide](DEPLOYMENT.md) - Guía de despliegue
 
 ---
-
 
 **🚀 MidatoPay - Protecting merchants from inflation with Web3 technology**
 
