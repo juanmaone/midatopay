@@ -274,7 +274,7 @@ jobs:
             --cache-control "public,max-age=31536000,immutable"
 
       - name: Invalidate CloudFront Cache
-        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_TEST != '' }}
+        continue-on-error: true
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_TEST }} \
@@ -341,7 +341,8 @@ jobs:
 
       - name: Send Slack Notification
         uses: 8398a7/action-slack@v3
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        continue-on-error: true
+        if: always()
         with:
           status: custom
           custom_payload: |
